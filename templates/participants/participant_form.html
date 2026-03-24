@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — UNICEF TMA{% endblock %}
+
+{% block content %}
+<a href="{% url 'participant_list' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] transition-colors mb-5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to list
+</a>
+
+<div class="bg-white rounded-xl border border-gray-200 max-w-2xl mx-auto" x-data="channelForm()">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-[#1A1A1A]">{{ title }}</h2>
+    </div>
+
+    <form method="post" class="p-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-5">
+            {% for error in form.non_field_errors %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Personal Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">First Name <span class="text-red-400">*</span></label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Last Name <span class="text-red-400">*</span></label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
+                {{ form.email }}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Phone</label>
+                {{ form.phone }}
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+            <div class="relative flex justify-center"><span class="bg-white px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Assignment</span></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Channel <span class="text-red-400">*</span></label>
+                {{ form.channel }}
+                {% if form.channel.errors %}<p class="text-xs text-red-600 mt-1">{{ form.channel.errors.0 }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Channel Role</label>
+                {{ form.channel_role }}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">State</label>
+                {{ form.state }}
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Origin (Traveling From)</label>
+                {{ form.origin }}
+            </div>
+        </div>
+
+        <!-- Channel-specific fields -->
+        <div x-show="channel === 'npc' || channel === 'health'" x-transition class="mt-4">
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">LGA</label>
+            {{ form.lga }}
+        </div>
+
+        <div x-show="channel === 'health'" x-transition class="mt-4">
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Health Organization</label>
+            {{ form.health_organization }}
+        </div>
+
+        <div x-show="channel === 'algon'" x-transition class="mt-4">
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Ward</label>
+            {{ form.ward }}
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-5 mt-6 border-t border-gray-200">
+            <a href="{% url 'participant_list' %}" class="px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-[#1A1A1A] transition-colors">Cancel</a>
+            <button type="submit" class="px-5 py-2.5 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-sm font-medium rounded-lg transition-colors">
+                {% if participant %}Update{% else %}Create{% endif %} Participant
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const CHANNEL_MAP = {{ channel_map_json|safe }};
+    function channelForm() {
+        const initialPk = document.getElementById('id_channel')?.value || '';
+        return {
+            channel: CHANNEL_MAP[initialPk] || '',
+            updateChannel(event) {
+                this.channel = CHANNEL_MAP[event.target.value] || '';
+            }
+        }
+    }
+</script>
+{% endblock %}

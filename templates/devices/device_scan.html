@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Device — UNICEF TMA{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'device_list' %}" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#1CABE2]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back to devices
+    </a>
+</div>
+
+<div class="max-w-2xl mx-auto" x-data="deviceScanner()">
+
+    <!-- Instructions -->
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+        <h3 class="text-sm font-medium text-gray-800 mb-1">How to scan a device</h3>
+        <p class="text-xs text-gray-600 leading-relaxed">Point your camera at the barcodes on the back of the device (e.g., OUKITEL RT7 TITAN). Each barcode encodes an IMEI number. The <strong>Serial Number (S/N)</strong> is usually printed as text only — enter it manually below. Scan the first barcode for IMEI 1, the second for IMEI 2.</p>
+    </div>
+
+    <!-- Scanner Area -->
+    <div class="bg-white rounded-xl border border-gray-200 mb-6">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-gray-900">Barcode Scanner</h2>
+            <button @click="toggleScanner()" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                    :class="scanning ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#1CABE2] text-white hover:bg-[#1590bd]'">
+                <span x-text="scanning ? 'Stop Camera' : 'Start Camera'"></span>
+            </button>
+        </div>
+        <div class="p-5">
+            <div id="scanner-container" class="rounded-lg overflow-hidden bg-gray-100" style="min-height: 250px;">
+                <div x-show="!scanning" class="flex items-center justify-center h-[250px] text-gray-400 text-sm">
+                    Tap "Start Camera" to begin scanning barcodes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanned Values -->
+    <div class="bg-white rounded-xl border border-gray-200 mb-6" x-show="scannedValues.length > 0" x-transition>
+        <div class="px-5 py-3 border-b border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-900">Scanned Barcodes</h2>
+        </div>
+        <div class="p-5 space-y-3">
+            <template x-for="(item, index) in scannedValues" :key="index">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <code class="text-sm font-mono text-gray-900" x-text="item.value"></code>
+                        <div class="text-[10px] text-gray-400 mt-0.5" x-text="item.value.length + ' digits'"></div>
+                    </div>
+                    <select x-model="item.label" @change="syncToForm()"
+                            class="px-2 py-1.5 text-xs rounded-lg border border-gray-300 bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="imei1">IMEI 1</option>
+                        <option value="imei2">IMEI 2</option>
+                        <option value="serial">Serial Number</option>
+                        <option value="ignore">Ignore</option>
+                    </select>
+                    <button @click="scannedValues.splice(index, 1); syncToForm()" class="text-gray-400 hover:text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Device Details Form -->
+    <div class="bg-white rounded-xl border border-gray-200">
+        <div class="px-5 py-3 border-b border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-900">Device Details</h2>
+        </div>
+        <form method="post" action="{% url 'device_save_scanned' %}" class="p-5"
+              hx-post="{% url 'device_save_scanned' %}" hx-target="#save-result">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">IMEI 1</label>
+                    <input type="text" name="imei_1" x-model="imei1"
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2]/20 outline-none font-mono"
+                           placeholder="Scan barcode or enter manually">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">IMEI 2</label>
+                    <input type="text" name="imei_2" x-model="imei2"
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2]/20 outline-none font-mono"
+                           placeholder="Scan barcode or enter manually">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Serial Number (S/N) <span class="text-red-500">*</span></label>
+                    <input type="text" name="serial_number" x-model="serialNumber" required
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2]/20 outline-none font-mono"
+                           placeholder="e.g. RT7TITAN0025809">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Device Type</label>
+                    <select name="device_type" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="tablet" selected>Tablet</option>
+                        <option value="phone">Phone</option>
+                        <option value="laptop">Laptop</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Brand</label>
+                    <input type="text" name="brand" value="OUKITEL"
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2]/20 outline-none"
+                           placeholder="e.g. OUKITEL">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Model</label>
+                    <input type="text" name="model_name" value="RT7 TITAN"
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2]/20 outline-none"
+                           placeholder="e.g. RT7 TITAN">
+                </div>
+            </div>
+
+            {% if training %}
+            <input type="hidden" name="training" value="{{ training.pk }}">
+            <input type="hidden" name="state" value="{{ training.state.pk }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">State</label>
+                    <div class="px-3 py-2 rounded-lg bg-gray-100 text-sm text-[#1A1A1A]">{{ training.state }}</div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">LGA</label>
+                    <select name="lga" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select LGA</option>
+                        {% for l in lgas %}<option value="{{ l.pk }}">{{ l.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% else %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">State</label>
+                    <select name="state" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select State</option>
+                        {% for s in states %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">LGA</label>
+                    <select name="lga" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select LGA</option>
+                        {% for l in lgas %}<option value="{{ l.pk }}">{{ l.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Status & Accessories -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Condition</label>
+                    <select name="condition" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="good" selected>Working</option>
+                        <option value="faulty">Faulty</option>
+                        <option value="not_working">Not Working</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Accessories</label>
+                    <select name="accessories_complete" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="1" selected>Complete</option>
+                        <option value="0">Incomplete</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select name="status" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="available" selected>Available</option>
+                        <option value="assigned">Assigned</option>
+                        <option value="damaged">Damaged</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-6">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Comment (optional)</label>
+                <textarea name="comment" rows="2" placeholder="Any notes about this device..." class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none"></textarea>
+            </div>
+
+            <div id="save-result" class="mb-4"></div>
+
+            <div class="flex items-center justify-between">
+                <button type="button" @click="resetForm()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">
+                    Clear & Scan Next
+                </button>
+                <button type="submit" class="px-5 py-2 bg-[#1CABE2] hover:bg-[#1590bd] text-white text-sm font-medium rounded-lg transition-colors">
+                    Save Device
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+function deviceScanner() {
+    return {
+        scanning: false,
+        scanner: null,
+        scannedValues: [],
+        imei1: '',
+        imei2: '',
+        serialNumber: '',
+        seenCodes: new Set(),
+
+        toggleScanner() {
+            this.scanning ? this.stopScanner() : this.startScanner();
+        },
+
+        startScanner() {
+            this.scanner = new Html5Qrcode("scanner-container");
+            this.scanning = true;
+
+            this.scanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 280, height: 100 },
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.ITF,
+                        Html5QrcodeSupportedFormats.CODABAR,
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                    ]
+                },
+                (decodedText) => this.onScanSuccess(decodedText),
+                () => {}
+            ).catch(err => {
+                console.error("Scanner error:", err);
+                this.scanning = false;
+            });
+        },
+
+        stopScanner() {
+            if (this.scanner) {
+                this.scanner.stop().then(() => {
+                    this.scanner.clear();
+                    this.scanning = false;
+                }).catch(() => { this.scanning = false; });
+            }
+        },
+
+        onScanSuccess(value) {
+            if (this.seenCodes.has(value)) return;
+            this.seenCodes.add(value);
+            if (navigator.vibrate) navigator.vibrate(100);
+
+            const cleanValue = value.replace(/\D/g, '');
+            let label = 'ignore';
+
+            // 15-digit = IMEI
+            if (cleanValue.length === 15) {
+                if (!this.imei1) {
+                    label = 'imei1';
+                    this.imei1 = cleanValue;
+                } else if (!this.imei2) {
+                    label = 'imei2';
+                    this.imei2 = cleanValue;
+                }
+            } else {
+                label = 'serial';
+                if (!this.serialNumber) this.serialNumber = cleanValue || value;
+            }
+
+            this.scannedValues.push({ value: cleanValue || value, label });
+        },
+
+        syncToForm() {
+            let i1 = '', i2 = '', sn = '';
+            for (const v of this.scannedValues) {
+                if (v.label === 'imei1' && !i1) i1 = v.value;
+                if (v.label === 'imei2' && !i2) i2 = v.value;
+                if (v.label === 'serial' && !sn) sn = v.value;
+            }
+            this.imei1 = i1;
+            this.imei2 = i2;
+            if (sn) this.serialNumber = sn;
+        },
+
+        resetForm() {
+            this.scannedValues = [];
+            this.imei1 = '';
+            this.imei2 = '';
+            this.serialNumber = '';
+            this.seenCodes.clear();
+            document.getElementById('save-result').innerHTML = '';
+        }
+    }
+}
+</script>
+{% endblock %}

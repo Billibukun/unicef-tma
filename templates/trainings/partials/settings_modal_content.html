@@ -1,0 +1,196 @@
+<div id="settings-content" class="p-6 space-y-6">
+
+    <!-- General -->
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">General</h3>
+        <form method="post" action="{% url 'training_save_settings' training.pk %}" hx-post="{% url 'training_save_settings' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3">
+            {% csrf_token %}
+            <label class="flex items-center gap-2 text-sm text-[#1A1A1A] cursor-pointer">
+                <input type="checkbox" name="device_management" value="1" {% if training.device_management %}checked{% endif %} class="w-4 h-4 rounded border-gray-300 text-[#1CABE2]">
+                Enable Device Management
+            </label>
+            <p class="text-[10px] text-gray-400 mt-1 mb-2">Device scanning, assignment, and tracking.</p>
+            <button type="submit" class="px-3 py-1.5 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-xs font-medium rounded-lg">Save</button>
+        </form>
+    </div>
+
+    <!-- Levels -->
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Training Levels</h3>
+        <p class="text-[10px] text-gray-400 mb-2">Define levels (e.g. State Level, LGA Level). Each level has its own number of days.</p>
+        {% for lv in levels %}
+        <div class="flex items-center justify-between p-2.5 bg-[#F0F0F0] rounded-lg mb-1.5">
+            <span class="text-sm font-medium text-[#1A1A1A]">{{ lv.name }} <span class="text-[10px] text-gray-400">{{ lv.days }} day{{ lv.days|pluralize }}</span></span>
+            <form method="post" action="{% url 'delete_level' lv.pk %}" hx-post="{% url 'delete_level' lv.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete {{ lv.name }}?">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+        </div>
+        {% endfor %}
+        <form method="post" action="{% url 'training_add_level' training.pk %}" hx-post="{% url 'training_add_level' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="flex gap-2 mt-2">
+            {% csrf_token %}
+            <input type="text" name="name" required placeholder="Level name" class="flex-1 px-2 py-1.5 rounded border border-gray-300 text-xs">
+            <input type="number" name="days" value="1" min="1" placeholder="Days" class="w-20 px-2 py-1.5 rounded border border-gray-300 text-xs">
+            <button type="submit" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Add</button>
+        </form>
+    </div>
+
+    <!-- Categories -->
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Participant Categories</h3>
+        {% for c in categories %}
+        <div class="bg-[#F0F0F0] rounded-lg mb-2" x-data="{ editing: false }">
+            <!-- Display row -->
+            <div x-show="!editing" class="flex items-center justify-between p-3">
+                <div class="flex-1">
+                    <span class="text-sm font-medium text-[#1A1A1A]">{{ c.name }}</span>
+                    {% for lv in c.levels.all %}<span class="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-500 ml-1">{{ lv.name }}</span>{% endfor %}
+                    <div class="text-[10px] text-gray-500 mt-0.5">{{ c.total_days }}d{% if c.arrival_day %} (incl. arrival){% endif %} × {{ c.dsa_rate|floatformat:0 }} DSA · Transport {{ c.local_transport|floatformat:0 }}{% if c.travel_mode != "none" %} · Travel{% endif %}{% if c.collect_nin %} · NIN{% endif %}{% if c.is_device_manager %} · Device Mgr{% endif %}</div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <form method="post" action="{% url 'toggle_category_registration' c.pk %}" hx-post="{% url 'toggle_category_registration' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="inline">{% csrf_token %}<button class="text-[10px] px-2 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Closed{% endif %}</button></form>
+                    <button @click="editing = true" class="text-[#1CABE2] text-xs">Edit</button>
+                    <form method="post" action="{% url 'delete_category' c.pk %}" hx-post="{% url 'delete_category' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete {{ c.name }}?" class="inline">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+                </div>
+            </div>
+            <!-- Edit form -->
+            <form x-show="editing" x-cloak method="post" action="{% url 'edit_category' c.pk %}" hx-post="{% url 'edit_category' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="p-3">
+                {% csrf_token %}
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Name</label><input type="text" name="name" value="{{ c.name }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                    <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">DSA/Day</label><input type="number" name="dsa_rate" value="{{ c.dsa_rate|floatformat:0 }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                    <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Local Transport</label><input type="number" name="local_transport" value="{{ c.local_transport|floatformat:0 }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-4">
+                    <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="arrival_day" value="1" {% if c.arrival_day %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Arrival day</label>
+                    <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="travel_enabled" value="1" {% if c.travel_mode != "none" %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Travel</label>
+                    <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="collect_nin" value="1" {% if c.collect_nin %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Collect NIN</label>
+                    <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="is_device_manager" value="1" {% if c.is_device_manager %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Device Manager</label>
+                </div>
+                {% if levels %}
+                <div class="mt-2">
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Levels</label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for lv in levels %}<label class="flex items-center gap-1 text-xs text-[#1A1A1A]"><input type="checkbox" name="levels" value="{{ lv.pk }}" {% if lv in c.levels.all %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> {{ lv.name }}</label>{% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="flex gap-2 mt-2">
+                    <button type="submit" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Save</button>
+                    <button type="button" @click="editing = false" class="px-3 py-1.5 text-xs text-gray-500">Cancel</button>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
+        <form method="post" action="{% url 'training_add_category' training.pk %}" hx-post="{% url 'training_add_category' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Name</label><input type="text" name="name" required placeholder="e.g. TOT Trainer" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">DSA/Day</label><input type="number" name="dsa_rate" value="0" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Local Transport</label><input type="number" name="local_transport" value="0" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Link Expires</label><input type="datetime-local" name="registration_expires" class="w-full px-2 py-1.5 rounded border border-gray-300 text-[10px]"></div>
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-4">
+                <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="arrival_day" value="1" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Arrival day (+1 DSA)</label>
+                <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="travel_enabled" value="1" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Travel</label>
+                <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="collect_nin" value="1" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Collect NIN</label>
+                <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="is_device_manager" value="1" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Device Manager</label>
+            </div>
+            {% if levels %}
+            <div class="mt-2">
+                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Levels</label>
+                <div class="flex flex-wrap gap-2">
+                    {% for lv in levels %}<label class="flex items-center gap-1 text-xs text-[#1A1A1A]"><input type="checkbox" name="levels" value="{{ lv.pk }}" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> {{ lv.name }}</label>{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <button type="submit" class="mt-2 px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Add Category</button>
+        </form>
+    </div>
+
+    <!-- Clusters & LGAs -->
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Clusters & LGAs</h3>
+        {% for cl in clusters %}
+        <div class="bg-[#F0F0F0] rounded-lg mb-2" x-data="{ editCluster: false }">
+            <div x-show="!editCluster" class="p-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-sm font-medium text-[#1A1A1A]">{{ cl.name }}</span>
+                        <span class="text-[10px] text-gray-400 ml-1">{{ cl.assignments.count }} people</span>
+                        {% if cl.training_centre %}<div class="text-[10px] text-gray-500 mt-0.5">Venue: {{ cl.training_centre }}</div>{% endif %}
+                        {% if cl.lgas.all %}<div class="flex flex-wrap gap-1 mt-1">{% for lga in cl.lgas.all %}<span class="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-500">{{ lga }}</span>{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button @click="editCluster = true" class="text-[#1CABE2] text-xs">Edit</button>
+                        <form method="post" action="{% url 'delete_cluster' cl.pk %}" hx-post="{% url 'delete_cluster' cl.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete?">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+                    </div>
+                </div>
+            </div>
+            <form x-show="editCluster" x-cloak method="post" action="{% url 'edit_cluster' cl.pk %}" hx-post="{% url 'edit_cluster' cl.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="p-3">
+                {% csrf_token %}
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Cluster Name</label><input type="text" name="name" value="{{ cl.name }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                    <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Training Centre</label><input type="text" name="training_centre" value="{{ cl.training_centre }}" placeholder="Venue name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                </div>
+                {% if state_lgas %}
+                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">LGAs</label>
+                <div class="flex flex-wrap gap-1.5 mb-2">
+                    {% for lga in state_lgas %}<label class="flex items-center gap-1 text-[10px] text-[#1A1A1A] bg-white px-2 py-1 rounded cursor-pointer hover:bg-blue-50"><input type="checkbox" name="lgas" value="{{ lga.pk }}" {% if lga in cl.lgas.all %}checked{% endif %} class="w-3 h-3 rounded border-gray-300 text-[#1CABE2]"> {{ lga.name }}</label>{% endfor %}
+                </div>
+                {% endif %}
+                <div class="flex gap-2"><button type="submit" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Save</button><button type="button" @click="editCluster = false" class="px-3 py-1.5 text-xs text-gray-500">Cancel</button></div>
+            </form>
+        </div>
+        {% endfor %}
+        <form method="post" action="{% url 'training_add_cluster' training.pk %}" hx-post="{% url 'training_add_cluster' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Cluster Name</label><input type="text" name="name" required placeholder="e.g. Funtua" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Training Centre</label><input type="text" name="training_centre" placeholder="Venue name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+            </div>
+            {% if state_lgas %}
+            <div class="mt-2">
+                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">LGAs</label>
+                <div class="flex flex-wrap gap-1.5">
+                    {% for lga in state_lgas %}<label class="flex items-center gap-1 text-[10px] text-[#1A1A1A] bg-white px-2 py-1 rounded cursor-pointer hover:bg-blue-50"><input type="checkbox" name="lgas" value="{{ lga.pk }}" class="w-3 h-3 rounded border-gray-300 text-[#1CABE2]"> {{ lga.name }}</label>{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Registration Links -->
+    {% if categories %}
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Registration Links</h3>
+        {% for c in categories %}
+        <div class="p-3 bg-[#F0F0F0] rounded-lg mb-2">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-[#1A1A1A]">{{ c.name }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Closed{% endif %}</span>
+            </div>
+            <code class="block mt-1 text-[10px] bg-white px-2 py-1.5 rounded select-all text-gray-600 break-all">{{ request.scheme }}://{{ request.get_host }}{{ c.registration_url }}</code>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Training Managers -->
+    <div>
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Training Managers</h3>
+        <p class="text-[10px] text-gray-400 mb-2">Users who can manage participants, devices, and bank validation.</p>
+        {% for m in training.managers.all %}
+        <div class="flex items-center justify-between p-2.5 bg-[#F0F0F0] rounded-lg mb-1.5">
+            <div><span class="text-sm font-medium text-[#1A1A1A]">{{ m.get_full_name|default:m.username }}</span>{% if m.email %}<span class="text-[10px] text-gray-400 ml-1">{{ m.email }}</span>{% endif %}</div>
+            <form method="post" action="{% url 'training_remove_manager' training.pk m.pk %}" hx-post="{% url 'training_remove_manager' training.pk m.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Remove?">{% csrf_token %}<button class="text-red-400 text-xs">Remove</button></form>
+        </div>
+        {% empty %}
+        <p class="text-xs text-gray-400 mb-2 italic">No managers yet.</p>
+        {% endfor %}
+        <div class="mt-2">
+            <input type="text" placeholder="Search user by name or email..."
+                   class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"
+                   hx-get="{% url 'training_search_managers' training.pk %}" hx-trigger="keyup changed delay:300ms" hx-target="#manager-search-results" name="q">
+            <div id="manager-search-results"></div>
+        </div>
+    </div>
+
+</div>

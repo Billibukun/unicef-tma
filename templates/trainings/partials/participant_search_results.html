@@ -1,0 +1,25 @@
+{% if results %}
+<div class="divide-y divide-gray-100 border border-gray-200 rounded-lg bg-white mt-2">
+    {% for p in results %}
+    <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+        <div>
+            <span class="font-medium text-sm text-[#1A1A1A]">{{ p.full_name }}</span>
+            <span class="text-xs text-gray-400 ml-1">{{ p.channel|default:"" }}</span>
+            {% if p.email or p.phone %}
+            <div class="text-[10px] text-gray-500">{{ p.email }}{% if p.email and p.phone %} · {% endif %}{{ p.phone }}</div>
+            {% endif %}
+            {% if p.state %}<span class="text-[10px] text-gray-400">{{ p.state }}</span>{% endif %}
+        </div>
+        <button type="button"
+                onclick="selectParticipant({{ p.pk }}, '{{ p.full_name|escapejs }}')"
+                class="px-3 py-1 text-xs font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]">
+            Select
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% elif q %}
+<div class="mt-2 px-4 py-3 text-center text-xs text-gray-400 bg-white border border-gray-200 rounded-lg">
+    No participants found for "{{ q }}"
+</div>
+{% endif %}

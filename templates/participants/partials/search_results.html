@@ -1,0 +1,20 @@
+{% if results %}
+<div class="divide-y divide-gray-100">
+    {% for p in results %}
+    <a href="{% url 'participant_detail' p.pk %}" class="block px-4 py-3 hover:bg-gray-50 transition-colors">
+        <div class="flex items-center justify-between">
+            <div>
+                <span class="font-medium text-[#1A1A1A] text-sm">{{ p.full_name }}</span>
+                <span class="text-xs text-gray-400 ml-2">{{ p.channel|default:"" }}</span>
+            </div>
+            <span class="text-xs text-gray-400">{{ p.state|default:"" }}</span>
+        </div>
+        {% if p.email or p.phone %}
+        <div class="text-xs text-gray-500 mt-0.5">{{ p.email }}{% if p.email and p.phone %} · {% endif %}{{ p.phone }}</div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% elif q %}
+<div class="px-4 py-6 text-center text-sm text-gray-400">No participants found for "{{ q }}"</div>
+{% endif %}

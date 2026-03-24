@@ -1,0 +1,23 @@
+{% if results %}
+<div class="divide-y divide-gray-100">
+    {% for d in results %}
+    <a href="{% url 'device_detail' d.pk %}" class="block px-4 py-3 hover:bg-gray-50 transition-colors">
+        <div class="flex items-center justify-between">
+            <div>
+                <span class="font-medium text-[#1A1A1A] text-sm">{{ d.serial_number }}</span>
+                <span class="text-xs text-gray-400 ml-2">{{ d.brand }} {{ d.model_name }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span>
+                <span class="text-xs text-gray-400">{{ d.get_status_display }}</span>
+            </div>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5">
+            IMEI: {{ d.imei_1|default:"—" }}{% if d.assigned_to %} · Assigned to {{ d.assigned_to }}{% endif %}{% if d.state %} · {{ d.state }}{% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% elif q %}
+<div class="px-4 py-6 text-center text-sm text-gray-400">No devices found for "{{ q }}"</div>
+{% endif %}

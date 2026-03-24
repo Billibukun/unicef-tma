@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ participant.full_name }} — {{ training.title }} — UNICEF TMA{% endblock %}
+{% block content %}
+<a href="{% url 'training_detail' training.pk %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to {{ training.title }}
+</a>
+
+<div class="max-w-3xl mx-auto space-y-5">
+    <!-- Header -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-start justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-[#1A1A1A]">{{ participant.full_name }}</h2>
+                <p class="text-xs text-gray-500 mt-0.5">{{ training.title }}</p>
+            </div>
+            <div class="flex gap-1.5">
+                <a href="{% url 'training_edit_assignment' assignment.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Edit Assignment</a>
+                <a href="{% url 'participant_detail' participant.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#1CABE2] text-[#1CABE2] hover:bg-blue-50">Global Profile</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Assignment Info -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-3">Training Assignment</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Category</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ assignment.training_category|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Cluster</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ assignment.cluster|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Role</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ participant.channel_role|default:"—" }}</div>
+            </div>
+            {% if assignment.cluster.training_centre %}
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Training Centre</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ assignment.cluster.training_centre }}</div>
+            </div>
+            {% endif %}
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Assigned</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ assignment.assigned_at|date:"d M Y" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-3">Personal Info</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div><span class="text-[10px] text-gray-400 uppercase block">Channel</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.channel|default:"—" }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">Phone</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.phone|default:"—" }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">Email</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.email|default:"—" }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">State</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.state|default:"—" }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">LGA</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.lga|default:"—" }}</span></div>
+            {% if participant.health_organization %}
+            <div><span class="text-[10px] text-gray-400 uppercase block">Health Organization</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.health_organization }}</span></div>
+            {% endif %}
+            {% if participant.nin %}
+            <div><span class="text-[10px] text-gray-400 uppercase block">NIN</span><span class="text-xs font-medium text-[#1A1A1A]">{{ participant.nin }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bank Account -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-3">Bank Account</h3>
+        {% if bank_account %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div><span class="text-[10px] text-gray-400 uppercase block">Bank</span><span class="text-xs font-medium text-[#1A1A1A]">{{ bank_account.bank }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">Account Number</span><span class="text-xs font-medium text-[#1A1A1A] font-mono">{{ bank_account.account_number }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">Account Name</span><span class="text-xs font-medium text-[#1A1A1A]">{{ bank_account.account_name|default:"—" }}</span></div>
+            <div><span class="text-[10px] text-gray-400 uppercase block">Status</span>{% if bank_account.is_validated %}<span class="text-xs font-medium text-green-600">Verified</span>{% else %}<span class="text-xs font-medium text-amber-600">Pending</span>{% endif %}</div>
+            {% if bank_account.is_proxy %}
+            <div><span class="text-[10px] text-gray-400 uppercase block">Proxy</span><span class="text-xs font-medium text-[#1A1A1A]">{{ bank_account.proxy_name }}</span></div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="text-xs text-gray-400">No bank account on file.</p>
+        {% endif %}
+    </div>
+
+    <!-- Devices (for this training only) -->
+    {% if training.device_management %}
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-3">Devices (This Training)</h3>
+        {% if devices %}
+        <div class="space-y-2">
+            {% for d in devices %}
+            <div class="flex items-center justify-between p-3 bg-[#F0F0F0] rounded-lg">
+                <div>
+                    <a href="{% url 'device_detail' d.pk %}" class="text-sm font-medium text-[#1CABE2] hover:underline font-mono">{{ d.serial_number }}</a>
+                    <div class="text-[10px] text-gray-500">{{ d.brand }} {{ d.model_name }} · IMEI: {{ d.imei_1|default:"—" }}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ d.get_status_display }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-gray-400">No devices assigned for this training.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

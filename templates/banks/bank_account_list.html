@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Accounts — UNICEF TMA{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Bank Accounts</h1>
+    <div class="flex gap-2">
+        <a href="{% url 'bank_account_export' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export CSV
+        </a>
+        <a href="{% url 'bank_validate_all' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+           onclick="return confirm('This will validate all unvalidated accounts via API. Continue?')">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Validate All
+        </a>
+        <a href="{% url 'bank_account_create' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-[#1CABE2] hover:bg-[#374EA2] text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Account
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl border border-gray-200 mb-6">
+    <div class="p-4">
+        <form method="get" class="flex flex-col sm:flex-row gap-3">
+            <input type="text" name="q" value="{{ current_search }}" placeholder="Search participant or account..." class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+            <select name="validated" class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+                <option value="">All Status</option>
+                <option value="yes" {% if current_validated == "yes" %}selected{% endif %}>Validated</option>
+                <option value="no" {% if current_validated == "no" %}selected{% endif %}>Not Validated</option>
+            </select>
+            <button type="submit" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-900 text-white transition-colors">Filter</button>
+            <a href="{% url 'bank_account_list' %}" class="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Clear</a>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-gray-700">
+                    <th class="text-left px-4 py-3 font-medium">Participant</th>
+                    <th class="text-left px-4 py-3 font-medium">Bank</th>
+                    <th class="text-left px-4 py-3 font-medium">Account No.</th>
+                    <th class="text-left px-4 py-3 font-medium">Account Name</th>
+                    <th class="text-left px-4 py-3 font-medium">Status</th>
+                    <th class="text-right px-4 py-3 font-medium">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ba in accounts %}
+                <tr id="row-{{ ba.pk }}" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <a href="{% url 'participant_detail' ba.participant.pk %}" class="text-[#1CABE2] hover:text-[#374EA2]">{{ ba.participant.full_name }}</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ ba.bank.short_name|default:ba.bank.name }}</td>
+                    <td class="px-4 py-3 font-mono text-gray-600">{{ ba.account_number }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ ba.account_name|default:"-" }}</td>
+                    <td class="px-4 py-3" id="status-{{ ba.pk }}">
+                        {% if ba.is_validated %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Valid
+                        </span>
+                        {% else %}
+                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        {% if not ba.is_validated %}
+                        <button class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                                hx-post="{% url 'bank_validate' ba.pk %}"
+                                hx-target="#status-{{ ba.pk }}"
+                                hx-swap="innerHTML">
+                            Validate
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-gray-400 py-8">No bank accounts found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="px-4 py-3 text-sm text-gray-400 border-t border-gray-100">
+        {{ accounts|length }} account{{ accounts|length|pluralize }}
+    </div>
+</div>
+{% endblock %}

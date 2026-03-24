@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — UNICEF TMA{% endblock %}
+
+{% block content %}
+<h1 class="text-lg font-bold text-[#1A1A1A] mb-5">Settings</h1>
+
+<!-- Global Settings -->
+<div class="bg-white rounded-xl border border-gray-200 mb-5">
+    <div class="px-5 py-3 border-b border-gray-200">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Global Financial Settings</span>
+    </div>
+    <form method="post" class="p-5">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Mileage Rate (NGN/km)</label>
+                <input type="number" name="mileage_rate" value="{{ sys_settings.mileage_rate_per_km }}" step="0.01" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+                <p class="text-xs text-gray-400 mt-1">Round-trip auto-calculated. Current: NGN {{ sys_settings.mileage_rate_per_km }}/km</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Terminal Fee per Leg (NGN)</label>
+                <input type="number" name="terminal_fee_per_leg" value="{{ sys_settings.terminal_fee_per_leg }}" step="0.01" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+                <p class="text-xs text-gray-400 mt-1">15k per leg (house↔airport). One air trip = 2 legs = 30k.</p>
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button type="submit" name="save_settings" class="px-4 py-2 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-xs font-medium rounded-lg">Save Settings</button>
+        </div>
+    </form>
+</div>
+
+<!-- Channels -->
+<div class="bg-white rounded-xl border border-gray-200 mb-5">
+    <div class="px-5 py-3 border-b border-gray-200">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Channels</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-200">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Code</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
+            <tbody>
+                {% for ch in channels %}
+                <tr class="border-b border-gray-50">
+                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ ch.name }}</td>
+                    <td class="px-5 py-2"><code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{{ ch.code }}</code></td>
+                    <td class="px-5 py-2">{% if ch.is_active %}<span class="text-xs text-green-700">Active</span>{% else %}<span class="text-xs text-gray-400">Inactive</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Training Roles -->
+<div class="bg-white rounded-xl border border-gray-200 mb-5">
+    <div class="px-5 py-3 border-b border-gray-200">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Training Roles ({{ roles|length }})</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-200">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Role</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
+            </tr></thead>
+            <tbody>
+                {% for r in roles %}
+                <tr class="border-b border-gray-50">
+                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ r.name }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ r.channel|default:"All Channels" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Banks -->
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Banks ({{ banks.paginator.count }})</span>
+        <div class="flex items-center gap-2 text-xs text-gray-400">
+            Show:
+            <a href="?per_page=15" class="hover:text-[#1CABE2] {% if banks.paginator.per_page == 15 %}text-[#1CABE2] font-medium{% endif %}">15</a>
+            <a href="?per_page=30" class="hover:text-[#1CABE2] {% if banks.paginator.per_page == 30 %}text-[#1CABE2] font-medium{% endif %}">30</a>
+            <a href="?per_page=100" class="hover:text-[#1CABE2] {% if banks.paginator.per_page == 100 %}text-[#1CABE2] font-medium{% endif %}">All</a>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-200">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Bank</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Short Name</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">CBN Code</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">UNICEF Code</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
+            <tbody>
+                {% for bank in banks %}
+                <tr class="border-b border-gray-50">
+                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ bank.name }}</td>
+                    <td class="px-5 py-2 text-gray-600">{{ bank.short_name }}</td>
+                    <td class="px-5 py-2"><code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{{ bank.cbn_code }}</code></td>
+                    <td class="px-5 py-2"><code class="text-xs bg-blue-50 text-[#1CABE2] px-1.5 py-0.5 rounded">{{ bank.unicef_code }}</code></td>
+                    <td class="px-5 py-2">{% if bank.is_active %}<span class="text-xs text-green-700">Active</span>{% else %}<span class="text-xs text-gray-400">Inactive</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if banks.has_other_pages %}
+    <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-xs">
+        <span class="text-gray-400">Page {{ banks.number }} of {{ banks.paginator.num_pages }}</span>
+        <div class="flex gap-1">
+            {% if banks.has_previous %}<a href="?page={{ banks.previous_page_number }}&per_page={{ banks.paginator.per_page }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">Prev</a>{% endif %}
+            {% if banks.has_next %}<a href="?page={{ banks.next_page_number }}&per_page={{ banks.paginator.per_page }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">Next</a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

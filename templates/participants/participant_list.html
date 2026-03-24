@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Participants — UNICEF TMA{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Participants</h1>
+    <div class="flex gap-2">
+        <a href="{% url 'participant_import' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import
+        </a>
+        <a href="{% url 'participant_export' %}?channel={{ current_channel|default:'' }}&state={{ current_state }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export CSV
+        </a>
+        <a href="{% url 'participant_create' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-[#1CABE2] hover:bg-[#374EA2] text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Participant
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl border border-gray-200 mb-6">
+    <div class="p-4">
+        <form method="get" class="flex flex-col sm:flex-row gap-3">
+            <input type="text" name="q" value="{{ current_search }}" placeholder="Search name or email..." class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+            <select name="channel" class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+                <option value="">All Channels</option>
+                {% for ch in channels %}
+                <option value="{{ ch.pk }}" {% if current_channel == ch.pk|stringformat:"d" %}selected{% endif %}>{{ ch.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="state" value="{{ current_state }}" placeholder="State" class="w-32 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+            <input type="text" name="channel_role" value="{{ current_role }}" placeholder="Role" class="w-32 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] focus:ring-1 focus:ring-[#1CABE2] outline-none">
+            <button type="submit" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-900 text-white transition-colors">Filter</button>
+            <a href="{% url 'participant_list' %}" class="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Clear</a>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-gray-700">
+                    <th class="text-left px-4 py-3 font-medium">Name</th>
+                    <th class="text-left px-4 py-3 font-medium">Channel</th>
+                    <th class="text-left px-4 py-3 font-medium">Role</th>
+                    <th class="text-left px-4 py-3 font-medium">State</th>
+                    <th class="text-left px-4 py-3 font-medium">Phone</th>
+                    <th class="text-right px-4 py-3 font-medium">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <a href="{% url 'participant_detail' p.pk %}" class="text-[#1CABE2] hover:text-[#374EA2] font-medium">{{ p.full_name }}</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ p.channel.name }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ p.channel_role|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ p.state|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ p.phone|default:"-" }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{% url 'participant_edit' p.pk %}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-gray-400 py-8">No participants found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="px-4 py-3 text-sm text-gray-400 border-t border-gray-100">
+        {{ participants|length }} participant{{ participants|length|pluralize }}
+    </div>
+</div>
+{% endblock %}

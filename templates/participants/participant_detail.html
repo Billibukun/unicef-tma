@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}{{ participant.full_name }} — UNICEF TMA{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <a href="{% url 'participant_list' %}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back to list
+    </a>
+    <a href="{% url 'participant_edit' participant.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[#1CABE2] hover:bg-[#374EA2] text-white transition-colors">Edit</a>
+</div>
+
+<!-- Participant info -->
+<div class="bg-white rounded-xl border border-gray-200 mb-6">
+    <div class="p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">{{ participant.full_name }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <p class="text-sm text-gray-400">Email</p>
+                <p class="font-medium text-gray-900">{{ participant.email|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Phone</p>
+                <p class="font-medium text-gray-900">{{ participant.phone|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Channel</p>
+                <p class="font-medium text-gray-900">{{ participant.channel.name }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Channel Role</p>
+                <p class="font-medium text-gray-900">{{ participant.channel_role|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Health Organization</p>
+                <p class="font-medium text-gray-900">{{ participant.health_organization|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Origin</p>
+                <p class="font-medium text-gray-900">{{ participant.origin|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">State</p>
+                <p class="font-medium text-gray-900">{{ participant.state|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">LGA</p>
+                <p class="font-medium text-gray-900">{{ participant.lga|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bank Account -->
+<div class="bg-white rounded-xl border border-gray-200 mb-6">
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Bank Account</h3>
+            {% if not bank_account %}
+            <a href="{% url 'bank_account_create' %}?participant={{ participant.pk }}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Add Bank Account</a>
+            {% endif %}
+        </div>
+
+        {% if bank_account %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <p class="text-sm text-gray-400">Bank</p>
+                <p class="font-medium text-gray-900">{{ bank_account.bank.name }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Account Number</p>
+                <p class="font-medium font-mono text-gray-900">{{ bank_account.account_number }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Account Name</p>
+                <p class="font-medium text-gray-900">{{ bank_account.account_name|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">UNICEF Bank Code</p>
+                <p class="font-medium font-mono text-gray-900">{{ bank_account.bank.unicef_code|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Validation Status</p>
+                <p>
+                    {% if bank_account.is_validated %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Validated
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">Not Validated</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if bank_account.validated_at %}
+            <div>
+                <p class="text-sm text-gray-400">Validated At</p>
+                <p class="font-medium text-gray-900">{{ bank_account.validated_at|date:"N j, Y g:i A" }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if not bank_account.is_validated %}
+        <div class="mt-4">
+            <button class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[#1CABE2] hover:bg-[#374EA2] text-white transition-colors"
+                    hx-post="{% url 'bank_validate' bank_account.pk %}"
+                    hx-target="#validation-result"
+                    hx-swap="innerHTML">
+                Validate Now
+            </button>
+            <div id="validation-result" class="mt-2"></div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <p class="text-gray-400">No bank account on file.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Training Assignments -->
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Training Assignments</h3>
+        {% if assignments %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 text-gray-700">
+                        <th class="text-left px-4 py-3 font-medium">Training</th>
+                        <th class="text-left px-4 py-3 font-medium">Role</th>
+                        <th class="text-left px-4 py-3 font-medium">Dates</th>
+                        <th class="text-left px-4 py-3 font-medium">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assignments %}
+                    <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3"><a href="{% url 'training_assignment_detail' a.pk %}" class="text-[#1CABE2] hover:underline">{{ a.training.title }}</a></td>
+                        <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-[#1CABE2]">{{ a.training_category|default:"—" }}</span></td>
+                        <td class="px-4 py-3 text-gray-600">{{ a.training.start_date|date:"M j" }} - {{ a.training.end_date|date:"M j, Y" }}</td>
+                        <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">{{ a.training.get_status_display }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-400">No training assignments yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Devices -->
+{% if devices %}
+<div class="bg-white rounded-xl border border-gray-200 mt-5">
+    <div class="p-5">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Devices ({{ devices|length }})</h3>
+        <div class="space-y-2">
+            {% for d in devices %}
+            <div class="flex items-center justify-between p-3 bg-[#F0F0F0] rounded-lg">
+                <div>
+                    <a href="{% url 'device_detail' d.pk %}" class="text-sm font-medium text-[#1CABE2] hover:underline font-mono">{{ d.serial_number }}</a>
+                    <div class="text-[10px] text-gray-500">{{ d.brand }} {{ d.model_name }} · IMEI: {{ d.imei_1|default:"—" }}{% if d.training %} · {{ d.training.title }}{% endif %}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ d.get_status_display }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

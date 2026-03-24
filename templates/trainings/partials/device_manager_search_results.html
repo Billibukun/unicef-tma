@@ -1,0 +1,17 @@
+{% if results %}
+<div class="divide-y divide-gray-100 border border-gray-200 rounded-lg bg-white mt-2">
+    {% for u in results %}
+    <form method="post" action="{% url 'training_add_device_manager' training.pk %}" hx-post="{% url 'training_add_device_manager' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="px-3 py-2.5 flex items-center justify-between hover:bg-gray-50">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ u.pk }}">
+        <div>
+            <span class="text-sm font-medium text-[#1A1A1A]">{{ u.get_full_name|default:u.username }}</span>
+            {% if u.email %}<span class="text-[10px] text-gray-400 ml-1">{{ u.email }}</span>{% endif %}
+        </div>
+        <button type="submit" class="px-2.5 py-1 text-xs font-medium rounded bg-[#1CABE2] text-white hover:bg-[#158fb8]">Add</button>
+    </form>
+    {% endfor %}
+</div>
+{% elif q %}
+<div class="mt-2 px-3 py-3 text-center text-xs text-gray-400 bg-white border border-gray-200 rounded-lg">No users found</div>
+{% endif %}
