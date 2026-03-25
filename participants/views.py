@@ -209,11 +209,14 @@ def participant_self_register(request, slug):
                     duplicate_checks.append(f"Account {account_number} is already registered for this training ({dup_bank.participant.full_name})")
 
             if duplicate_checks:
+                from common.models import State
                 return render(request, "participants/participant_self_register.html", {
                     "form": form,
                     "training": training,
                     "category": category,
                     "duplicate_errors": duplicate_checks,
+                    "state_lgas": training.state.lgas.all() if training.state else [],
+                    "all_states": State.objects.all(),
                 })
 
             # Check if participant already exists (reuse record)
@@ -241,10 +244,28 @@ def participant_self_register(request, slug):
                 participant.save(update_fields=["nin"])
 
             # Link to this training + category
+            assignment_defaults = {"training_category": category}
+
+            # Save travel data if category has travel enabled
+            if category.travel_mode != "none":
+                assignment_defaults["outbound_mode"] = request.POST.get("outbound_mode", "none")
+                assignment_defaults["outbound_from_id"] = request.POST.get("outbound_from") or None
+                assignment_defaults["outbound_to_id"] = training.state_id
+                assignment_defaults["return_mode"] = request.POST.get("return_mode", "none")
+                assignment_defaults["return_from_id"] = training.state_id
+                assignment_defaults["return_to_id"] = request.POST.get("return_to") or None
+
+                # Auto-calculate mileage for road legs
+                from trainings.models import TrainingAssignment as TA
+                temp = TA(**assignment_defaults, training=training, participant=participant)
+                temp.calculate_mileage()
+                assignment_defaults["outbound_mileage"] = temp.outbound_mileage
+                assignment_defaults["return_mileage"] = temp.return_mileage
+
             assignment, created = TrainingAssignment.objects.get_or_create(
                 training=training,
                 participant=participant,
-                defaults={"training_category": category},
+                defaults=assignment_defaults,
             )
             if not created:
                 return render(request, "participants/participant_self_register.html", {
@@ -279,10 +300,16 @@ def participant_self_register(request, slug):
     else:
         form = SelfRegistrationForm()
 
+    from common.models import State
+    state_lgas = training.state.lgas.all() if training.state else []
+    all_states = State.objects.all()
+
     return render(request, "participants/participant_self_register.html", {
         "form": form,
         "training": training,
         "category": category,
+        "state_lgas": state_lgas,
+        "all_states": all_states,
     })
 
 

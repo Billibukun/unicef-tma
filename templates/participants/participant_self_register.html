@@ -107,16 +107,23 @@
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Role</label>
                     {{ form.channel_role }}
                 </div>
+
+                <!-- State: auto from training, shown as read-only -->
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">State</label>
-                    {{ form.state }}
+                    <div class="px-3 py-2.5 rounded-lg bg-gray-100 text-sm text-[#1A1A1A]">{{ training.state }}</div>
+                    <input type="hidden" name="state" value="{{ training.state.pk }}">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">LGA</label>
-                    {{ form.lga }}
+                    <select name="lga" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm text-[#1A1A1A] bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select LGA</option>
+                        {% for l in state_lgas %}<option value="{{ l.pk }}">{{ l.name }}</option>{% endfor %}
+                    </select>
                 </div>
+
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Health Organization</label>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Organization</label>
                     {{ form.health_organization }}
                 </div>
                 {% if category.collect_nin %}
@@ -126,6 +133,53 @@
                 </div>
                 {% endif %}
             </div>
+
+            <!-- Travel Section (only if category has travel enabled) -->
+            {% if category.travel_mode != "none" %}
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                <div class="relative flex justify-center"><span class="bg-white px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Travel Details</span></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Outbound — Traveling From</label>
+                    <select name="outbound_from" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select State</option>
+                        {% for s in all_states %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Outbound — Mode</label>
+                    <select name="outbound_mode" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="road">Road</option>
+                        <option value="air">Air</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Outbound — Travel Date</label>
+                    <input type="date" name="outbound_date" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+                </div>
+                <div></div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Return — Traveling To</label>
+                    <select name="return_to" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="">Select State</option>
+                        {% for s in all_states %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Return — Mode</label>
+                    <select name="return_mode" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                        <option value="road">Road</option>
+                        <option value="air">Air</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Return — Travel Date</label>
+                    <input type="date" name="return_date" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Bank Section -->
             <div class="relative my-6">
