@@ -263,6 +263,20 @@ def device_bulk_upload(request):
 
 
 @login_required
+def device_search_participant(request):
+    """HTMX: search participants for device assignment."""
+    from django.db.models import Q
+    q = request.GET.get("q", "").strip()
+    results = []
+    if len(q) >= 2:
+        results = Participant.objects.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+            Q(email__icontains=q) | Q(phone__icontains=q)
+        ).select_related("channel")[:10]
+    return render(request, "devices/partials/participant_search.html", {"results": results, "q": q})
+
+
+@login_required
 def device_update_status(request, pk: int):
     """Update device status/condition with a log entry."""
     device = get_object_or_404(Device, pk=pk)

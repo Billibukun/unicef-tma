@@ -38,7 +38,16 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <h2 class="text-lg font-bold text-[#1A1A1A] mb-2">Registration Complete</h2>
             <p class="text-sm text-gray-500 mb-1">Thank you, <strong class="text-[#1A1A1A]">{{ participant.full_name }}</strong>.</p>
-            <p class="text-xs text-gray-400 mb-6">You are registered as <strong>{{ category.name }}</strong> for this training.</p>
+            <p class="text-xs text-gray-400 mb-4">You are registered as <strong>{{ category.name }}</strong> for this training.</p>
+
+            {% if login_credentials %}
+            <div class="max-w-sm mx-auto mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                <p class="text-xs font-bold text-[#1CABE2] uppercase mb-2">Your Login Credentials</p>
+                <p class="text-sm text-[#1A1A1A]">Username: <strong class="font-mono">{{ login_credentials.username }}</strong></p>
+                <p class="text-sm text-[#1A1A1A]">Password: <strong class="font-mono">{{ login_credentials.password }}</strong></p>
+                <p class="text-[10px] text-gray-500 mt-2">Save these credentials. Use them to log in and manage devices.</p>
+            </div>
+            {% endif %}
 
             {% if bank_validation_result %}
             <div class="max-w-sm mx-auto mb-6">

@@ -275,6 +275,29 @@ def participant_self_register(request, slug):
                     "duplicate_errors": [f"{participant.full_name} is already registered for this training."],
                 })
 
+            # Auto-create login for device managers
+            login_credentials = None
+            if category.is_device_manager and not participant.user:
+                from accounts.models import CustomUser
+                import secrets
+                username = (participant.phone or participant.email or f"dm_{participant.pk}").replace("+", "").replace("@", "_")
+                if CustomUser.objects.filter(username=username).exists():
+                    username = f"{username}_{participant.pk}"
+                temp_password = secrets.token_urlsafe(8)
+                user = CustomUser.objects.create_user(
+                    username=username,
+                    password=temp_password,
+                    first_name=participant.first_name,
+                    last_name=participant.last_name,
+                    email=participant.email,
+                    state=training.state,
+                    channel=participant.channel,
+                )
+                participant.user = user
+                participant.save(update_fields=["user"])
+                training.managers.add(user)
+                login_credentials = {"username": username, "password": temp_password}
+
             # Validate bank account immediately
             bank_result = None
             try:
@@ -296,6 +319,7 @@ def participant_self_register(request, slug):
                 "training": training,
                 "category": category,
                 "bank_validation_result": bank_result,
+                "login_credentials": login_credentials,
             })
     else:
         form = SelfRegistrationForm()

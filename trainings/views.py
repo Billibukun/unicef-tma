@@ -18,7 +18,17 @@ def _settings_redirect(training):
 
 @login_required
 def training_list(request):
-    qs = Training.objects.select_related("channel", "created_by")
+    qs = Training.objects.select_related("channel", "created_by", "state")
+
+    # Role-based filtering
+    user = request.user
+    is_state_admin = user.groups.filter(name="State Admin").exists()
+    is_training_manager = user.managed_trainings.exists()
+    if is_state_admin and user.state:
+        qs = qs.filter(state=user.state)
+    elif is_training_manager and not user.is_superuser:
+        if not user.groups.filter(name__in=["UNICEF Admin", "National Admin", "UNICEF HQ"]).exists():
+            qs = user.managed_trainings.all().select_related("channel", "created_by", "state")
 
     # Filters from GET params
     channel_id = request.GET.get("channel")
@@ -134,6 +144,9 @@ def training_detail(request, pk: int):
         "grand_total": grand_total,
         "available_roles": available_roles,
         "state_lgas": training.state.lgas.all() if training.state else [],
+        "available_lgas": training.state.lgas.exclude(
+            pk__in=TrainingCluster.objects.filter(training=training).values_list("lgas", flat=True)
+        ) if training.state else [],
         "cat_filter": cat_filter,
         "cluster_filter": cluster_filter,
         "role_filter": role_filter,
@@ -217,13 +230,18 @@ def add_cluster(request, pk: int):
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
         training_centre = request.POST.get("training_centre", "").strip()
+        all_lgas = "all_lgas" in request.POST
         lga_ids = request.POST.getlist("lgas")
         if name:
             cluster, _ = TrainingCluster.objects.get_or_create(
                 training=training, name=name,
                 defaults={"training_centre": training_centre},
             )
-            if lga_ids:
+            if all_lgas and training.state:
+                assigned = TrainingCluster.objects.filter(training=training).exclude(pk=cluster.pk).values_list("lgas", flat=True)
+                remaining = training.state.lgas.exclude(pk__in=assigned)
+                cluster.lgas.set(remaining)
+            elif lga_ids:
                 cluster.lgas.set(lga_ids)
     return _settings_redirect(training)
 

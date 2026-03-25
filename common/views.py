@@ -12,7 +12,19 @@ from trainings.models import Training
 
 @login_required
 def dashboard(request):
+    user = request.user
+
+    # Filter trainings based on role
     training_qs = Training.objects.all()
+    is_state_admin = user.groups.filter(name="State Admin").exists()
+    is_training_manager = user.managed_trainings.exists()
+
+    if is_state_admin and user.state:
+        training_qs = training_qs.filter(state=user.state)
+    elif is_training_manager and not user.is_superuser:
+        if not user.groups.filter(name__in=["UNICEF Admin", "National Admin", "UNICEF HQ"]).exists():
+            training_qs = user.managed_trainings.all()
+
     context = {
         "training_count": training_qs.count(),
         "ongoing_count": training_qs.filter(status="ongoing").count(),
@@ -121,5 +133,41 @@ def admin_add_user(request):
                 except Group.DoesNotExist:
                     pass
             messages.success(request, f"User {username} created.")
+
+    return redirect("admin_tools")
+
+
+@login_required
+def upload_lgas(request):
+    """Bulk upload LGAs from CSV. Format: state_name,lga_name (one per line)."""
+    if not request.user.is_superuser:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied")
+
+    if request.method == "POST" and request.FILES.get("file"):
+        import csv, io
+        from common.models import State, LGA
+        f = request.FILES["file"]
+        decoded = f.read().decode("utf-8-sig")
+        reader = csv.reader(io.StringIO(decoded))
+        created = 0
+        skipped = 0
+        for row in reader:
+            if len(row) < 2:
+                continue
+            state_name = row[0].strip()
+            lga_name = row[1].strip()
+            if not state_name or not lga_name:
+                continue
+            state = State.objects.filter(name__iexact=state_name).first()
+            if not state:
+                skipped += 1
+                continue
+            _, was_created = LGA.objects.get_or_create(state=state, name=lga_name)
+            if was_created:
+                created += 1
+            else:
+                skipped += 1
+        messages.success(request, f"{created} LGAs created, {skipped} skipped.")
 
     return redirect("admin_tools")

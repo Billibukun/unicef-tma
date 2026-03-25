@@ -143,15 +143,22 @@
                 <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Cluster Name</label><input type="text" name="name" required placeholder="e.g. Funtua" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
                 <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Training Centre</label><input type="text" name="training_centre" placeholder="Venue name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
             </div>
-            {% if state_lgas %}
+            {% if available_lgas %}
             <div class="mt-2">
-                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">LGAs</label>
+                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">LGAs <span class="text-[10px] text-gray-400 normal-case">(only unassigned shown)</span></label>
                 <div class="flex flex-wrap gap-1.5">
-                    {% for lga in state_lgas %}<label class="flex items-center gap-1 text-[10px] text-[#1A1A1A] bg-white px-2 py-1 rounded cursor-pointer hover:bg-blue-50"><input type="checkbox" name="lgas" value="{{ lga.pk }}" class="w-3 h-3 rounded border-gray-300 text-[#1CABE2]"> {{ lga.name }}</label>{% endfor %}
+                    {% for lga in available_lgas %}<label class="flex items-center gap-1 text-[10px] text-[#1A1A1A] bg-white px-2 py-1 rounded cursor-pointer hover:bg-blue-50"><input type="checkbox" name="lgas" value="{{ lga.pk }}" class="w-3 h-3 rounded border-gray-300 text-[#1CABE2]"> {{ lga.name }}</label>{% endfor %}
                 </div>
             </div>
+            {% elif state_lgas %}
+            <p class="text-[10px] text-gray-400 mt-2">All LGAs are already assigned to clusters.</p>
             {% endif %}
-            <button type="submit" class="mt-2 px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Add Cluster</button>
+            <div class="flex items-center gap-2 mt-2">
+                <button type="submit" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Add Cluster</button>
+                {% if available_lgas %}
+                <button type="submit" name="all_lgas" value="1" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-lg">All Remaining LGAs</button>
+                {% endif %}
+            </div>
         </form>
     </div>
 

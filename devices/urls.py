@@ -13,4 +13,5 @@ urlpatterns = [
     path("<int:pk>/assign/", views.device_assign, name="device_assign"),
     path("<int:pk>/update-status/", views.device_update_status, name="device_update_status"),
     path("search/", views.device_search, name="device_search"),
+    path("search-participant/", views.device_search_participant, name="device_search_participant"),
 ]
