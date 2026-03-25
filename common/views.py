@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.models import CustomUser
 from banks.models import Bank, BankAccount
@@ -48,12 +48,19 @@ def admin_tools(request):
     from trainings.models import Training
     from common.models import State
 
-    users = CustomUser.objects.filter(is_active=True).select_related("channel", "state").order_by("first_name")
+    users = CustomUser.objects.filter(is_active=True).select_related("channel", "state").prefetch_related("groups", "managed_trainings").order_by("first_name")
     groups = Group.objects.all()
+
+    # Identify device managers (users linked to participants)
+    from participants.models import Participant
+    device_manager_user_ids = set(
+        Participant.objects.filter(user__isnull=False).values_list("user_id", flat=True)
+    )
 
     context = {
         "users": users,
         "groups": groups,
+        "device_manager_ids": device_manager_user_ids,
         "channels": Channel.objects.all(),
         "states": State.objects.all(),
         "bank_count": Bank.objects.filter(is_active=True).count(),
@@ -133,6 +140,23 @@ def admin_add_user(request):
                 except Group.DoesNotExist:
                     pass
             messages.success(request, f"User {username} created.")
+
+    return redirect("admin_tools")
+
+
+@login_required
+def admin_reset_password(request, user_id):
+    if not request.user.is_superuser:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied")
+
+    if request.method == "POST":
+        user = get_object_or_404(CustomUser, pk=user_id)
+        import secrets
+        new_password = secrets.token_urlsafe(8)
+        user.set_password(new_password)
+        user.save()
+        messages.success(request, f"Password reset for {user.username}. New password: {new_password}")
 
     return redirect("admin_tools")
 

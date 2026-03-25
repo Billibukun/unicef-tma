@@ -97,19 +97,30 @@
                 <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Email</th>
                 <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
                 <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">State</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Groups</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Role</th>
                 <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+                <th class="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Actions</th>
             </tr></thead>
             <tbody>
                 {% for u in users %}
                 <tr class="border-b border-gray-50 hover:bg-gray-50">
                     <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ u.get_full_name|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.username }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500 font-mono">{{ u.username }}</td>
                     <td class="px-5 py-2 text-xs text-gray-500">{{ u.email|default:"—" }}</td>
                     <td class="px-5 py-2 text-xs text-gray-500">{{ u.channel|default:"—" }}</td>
                     <td class="px-5 py-2 text-xs text-gray-500">{{ u.state|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs">{% for g in u.groups.all %}<span class="px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2] text-[10px] mr-1">{{ g.name }}</span>{% empty %}—{% endfor %}</td>
+                    <td class="px-5 py-2 text-xs">
+                        {% for g in u.groups.all %}<span class="px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2] text-[10px] mr-1">{{ g.name }}</span>{% endfor %}
+                        {% if u.pk in device_manager_ids %}<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px]">Device Mgr</span>{% endif %}
+                        {% if u.managed_trainings.exists %}<span class="px-1.5 py-0.5 rounded bg-green-50 text-green-700 text-[10px] ml-1">Training Mgr</span>{% endif %}
+                    </td>
                     <td class="px-5 py-2 text-center">{% if u.is_superuser %}<span class="text-[10px] text-[#1CABE2]">Admin</span>{% elif u.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Inactive</span>{% endif %}</td>
+                    <td class="px-5 py-2">
+                        <form method="post" action="{% url 'admin_reset_password' u.pk %}" onsubmit="return confirm('Reset password for {{ u.username }}?')" class="inline">
+                            {% csrf_token %}
+                            <button class="text-[10px] text-[#1CABE2] hover:underline">Reset PW</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
