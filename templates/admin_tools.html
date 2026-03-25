@@ -1,103 +1,142 @@
 {% extends "base.html" %}
-
 {% block title %}Admin Tools — UNICEF TMA{% endblock %}
-
 {% block content %}
-<h1 class="text-xl font-bold text-gray-900 mb-6">Admin Tools</h1>
+<h1 class="text-lg font-bold text-[#1A1A1A] mb-5">Admin Tools</h1>
 
-<!-- Quick Stats -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="text-sm text-gray-500 mb-1">Active Users</div>
-        <div class="text-2xl font-bold text-gray-900">{{ user_count }}</div>
+<!-- Stats -->
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] text-gray-400 uppercase">Users</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ user_count }}</div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="text-sm text-gray-500 mb-1">Channels</div>
-        <div class="text-2xl font-bold text-gray-900">{{ channel_count }}</div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] text-gray-400 uppercase">Trainings</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ training_count }}</div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="text-sm text-gray-500 mb-1">Active Banks</div>
-        <div class="text-2xl font-bold text-gray-900">{{ bank_count }}</div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] text-gray-400 uppercase">Participants</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ participant_count }}</div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] text-gray-400 uppercase">Channels</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ channel_count }}</div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] text-gray-400 uppercase">Banks</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ bank_count }}</div>
     </div>
 </div>
 
-<!-- Management Links -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-    <a href="{% url 'admin:accounts_customuser_changelist' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-colors group">
+<!-- Quick Links -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+    <a href="{% url 'settings' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
+            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
             </div>
             <div>
-                <div class="font-semibold text-gray-900 group-hover:text-[#1CABE2]">Manage Users</div>
-                <div class="text-xs text-gray-400">Add, edit, and manage system users</div>
+                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">System Settings</div>
+                <div class="text-[10px] text-gray-400">Mileage, terminals, channels, banks, roles</div>
             </div>
         </div>
     </a>
+    <a href="{% url 'training_list' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <div>
+                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Manage Trainings</div>
+                <div class="text-[10px] text-gray-400">All training events</div>
+            </div>
+        </div>
+    </a>
+    <a href="{% url 'participant_list' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">All Participants</div>
+                <div class="text-[10px] text-gray-400">Global participant registry</div>
+            </div>
+        </div>
+    </a>
+</div>
 
-    <a href="{% url 'admin:auth_group_changelist' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            </div>
-            <div>
-                <div class="font-semibold text-gray-900 group-hover:text-[#1CABE2]">Roles & Permissions</div>
-                <div class="text-xs text-gray-400">Manage user groups and access levels</div>
-            </div>
-        </div>
-    </a>
+<!-- Users Management -->
+<div class="bg-white rounded-xl border border-gray-200 mb-5" x-data="{ showAddUser: false }">
+    <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+        <span class="text-sm font-semibold text-[#1A1A1A]">System Users ({{ user_count }})</span>
+        <button @click="showAddUser = !showAddUser" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]">Add User</button>
+    </div>
 
-    <a href="{% url 'settings' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+    <!-- Add user form -->
+    <div x-show="showAddUser" x-cloak class="border-b border-gray-200 p-4 bg-[#F0F0F0]">
+        <form method="post" action="{% url 'admin_add_user' %}">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Username</label><input type="text" name="username" required class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">First Name</label><input type="text" name="first_name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Last Name</label><input type="text" name="last_name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Email</label><input type="email" name="email" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Password</label><input type="password" name="password" required class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Channel</label><select name="channel" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for ch in channels %}<option value="{{ ch.pk }}">{{ ch.name }}</option>{% endfor %}</select></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">State</label><select name="state" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for s in states %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}</select></div>
+                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Group</label><select name="group" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for g in groups %}<option value="{{ g.pk }}">{{ g.name }}</option>{% endfor %}</select></div>
             </div>
-            <div>
-                <div class="font-semibold text-gray-900 group-hover:text-[#1CABE2]">System Settings</div>
-                <div class="text-xs text-gray-400">Channels, banks, and configuration</div>
-            </div>
-        </div>
-    </a>
+            <button type="submit" class="mt-2 px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Create User</button>
+        </form>
+    </div>
 
-    <a href="{% url 'admin:index' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
-            </div>
-            <div>
-                <div class="font-semibold text-gray-900 group-hover:text-[#1CABE2]">Django Admin</div>
-                <div class="text-xs text-gray-400">Advanced database administration</div>
-            </div>
-        </div>
-    </a>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-200">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Username</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Email</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">State</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Groups</th>
+                <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
+            <tbody>
+                {% for u in users %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ u.get_full_name|default:"—" }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.username }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.email|default:"—" }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.channel|default:"—" }}</td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.state|default:"—" }}</td>
+                    <td class="px-5 py-2 text-xs">{% for g in u.groups.all %}<span class="px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2] text-[10px] mr-1">{{ g.name }}</span>{% empty %}—{% endfor %}</td>
+                    <td class="px-5 py-2 text-center">{% if u.is_superuser %}<span class="text-[10px] text-[#1CABE2]">Admin</span>{% elif u.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Inactive</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Channels -->
-<div class="bg-white rounded-xl border border-gray-200 mb-6">
-    <div class="px-5 py-4 border-b border-gray-100">
-        <h2 class="text-sm font-semibold text-gray-900">Channels</h2>
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-5 py-3 border-b border-gray-200">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Channels</span>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-100">
-                    <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Code</th>
-                    <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                </tr>
-            </thead>
+            <thead><tr class="border-b border-gray-200">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Code</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Description</th>
+                <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
             <tbody>
                 {% for ch in channels %}
                 <tr class="border-b border-gray-50">
-                    <td class="px-5 py-3 font-medium text-gray-900">{{ ch.name }}</td>
-                    <td class="px-5 py-3 text-gray-600">{{ ch.code }}</td>
-                    <td class="px-5 py-3">
-                        {% if ch.is_active %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">Active</span>
-                        {% else %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500">Inactive</span>
-                        {% endif %}
-                    </td>
+                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ ch.name }}</td>
+                    <td class="px-5 py-2"><code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{{ ch.code }}</code></td>
+                    <td class="px-5 py-2 text-xs text-gray-500">{{ ch.description|default:"—" }}</td>
+                    <td class="px-5 py-2 text-center">{% if ch.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Inactive</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

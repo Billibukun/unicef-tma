@@ -32,12 +32,23 @@ def admin_tools(request):
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden("Access denied")
 
+    from django.contrib.auth.models import Group
+    from trainings.models import Training
+    from common.models import State
+
+    users = CustomUser.objects.filter(is_active=True).select_related("channel", "state").order_by("first_name")
+    groups = Group.objects.all()
+
     context = {
+        "users": users,
+        "groups": groups,
         "channels": Channel.objects.all(),
-        "banks": Bank.objects.all(),
+        "states": State.objects.all(),
         "bank_count": Bank.objects.filter(is_active=True).count(),
-        "user_count": CustomUser.objects.filter(is_active=True).count(),
+        "user_count": users.count(),
         "channel_count": Channel.objects.filter(is_active=True).count(),
+        "training_count": Training.objects.count(),
+        "participant_count": Participant.objects.count(),
     }
     return render(request, "admin_tools.html", context)
 
@@ -76,3 +87,41 @@ def settings_view(request):
         "roles": roles,
     }
     return render(request, "settings.html", context)
+
+
+@login_required
+def admin_add_user(request):
+    if not request.user.is_superuser:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied")
+
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip()
+        channel_id = request.POST.get("channel") or None
+        state_id = request.POST.get("state") or None
+        group_id = request.POST.get("group") or None
+
+        if username and password:
+            user = CustomUser.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                channel_id=channel_id,
+                state_id=state_id,
+            )
+            if group_id:
+                from django.contrib.auth.models import Group
+                try:
+                    group = Group.objects.get(pk=group_id)
+                    user.groups.add(group)
+                except Group.DoesNotExist:
+                    pass
+            messages.success(request, f"User {username} created.")
+
+    return redirect("admin_tools")
