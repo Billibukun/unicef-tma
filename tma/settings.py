@@ -95,3 +95,6 @@ PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
 
 # Flutterwave
 FLUTTERWAVE_SECRET_KEY = config("FLUTTERWAVE_SECRET_KEY", default="")
+
+# Base URL for registration links
+BASE_URL = config("BASE_URL", default="http://127.0.0.1:8902")

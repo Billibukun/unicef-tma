@@ -167,7 +167,7 @@
                 <span class="text-sm font-medium text-[#1A1A1A]">{{ c.name }}</span>
                 <span class="text-[10px] px-2 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Closed{% endif %}</span>
             </div>
-            <code class="block mt-1 text-[10px] bg-white px-2 py-1.5 rounded select-all text-gray-600 break-all">{{ request.scheme }}://{{ request.get_host }}{{ c.registration_url }}</code>
+            <code class="block mt-1 text-[10px] bg-white px-2 py-1.5 rounded select-all text-gray-600 break-all">{{ c.registration_url }}</code>
         </div>
         {% endfor %}
     </div>

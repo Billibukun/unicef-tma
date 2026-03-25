@@ -39,7 +39,7 @@
         <div class="flex items-center gap-2 text-xs">
             <span class="text-[10px] px-1.5 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Off{% endif %}</span>
             <span class="font-medium text-[#1A1A1A]">{{ c.name }}</span>
-            <code class="text-[10px] text-gray-400 select-all truncate flex-1">{{ request.scheme }}://{{ request.get_host }}{{ c.registration_url }}</code>
+            <code class="text-[10px] text-gray-400 select-all truncate flex-1">{{ c.registration_url }}</code>
         </div>
         {% endfor %}
     </div>

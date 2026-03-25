@@ -168,7 +168,9 @@ class TrainingCategory(models.Model):
 
     @property
     def registration_url(self):
-        return f"/participants/register/{self.slug}/"
+        from django.conf import settings
+        base = getattr(settings, "BASE_URL", "").rstrip("/")
+        return f"{base}/participants/register/{self.slug}/"
 
     @property
     def is_registration_active(self) -> bool:
