@@ -267,7 +267,10 @@ def edit_category(request, cat_id: int):
         cat.save()
         level_ids = request.POST.getlist("levels")
         cat.levels.set(level_ids)
-    return _settings_response(request, cat.training)
+    # Regular redirect — modal will reopen via ?settings=1
+    from django.http import HttpResponseRedirect
+    from django.urls import reverse
+    return HttpResponseRedirect(reverse("training_detail", args=[cat.training_id]) + "?settings=1")
 
 
 @login_required

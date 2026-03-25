@@ -51,7 +51,7 @@
                 </div>
             </div>
             <!-- Edit form -->
-            <form x-show="editing" x-cloak method="post" action="{% url 'edit_category' c.pk %}" hx-post="{% url 'edit_category' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="p-3">
+            <form x-show="editing" x-cloak method="post" action="{% url 'edit_category' c.pk %}" class="p-3">
                 {% csrf_token %}
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Name</label><input type="text" name="name" value="{{ c.name }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
