@@ -55,7 +55,8 @@ def admin_tools(request):
 
 @login_required
 def settings_view(request):
-    if not request.user.is_superuser:
+    is_unicef_admin = request.user.groups.filter(name="UNICEF Admin").exists()
+    if not request.user.is_superuser and not is_unicef_admin:
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden("Access denied")
 
@@ -70,11 +71,9 @@ def settings_view(request):
         messages.success(request, "Settings saved.")
         return redirect("settings")
 
-    channels = Channel.objects.all()
     banks = Bank.objects.all().order_by("name")
     roles = TrainingRole.objects.select_related("channel").order_by("channel__name", "name")
 
-    # Pagination for banks
     from django.core.paginator import Paginator
     per_page = request.GET.get("per_page", 15)
     bank_paginator = Paginator(banks, per_page)
@@ -82,7 +81,6 @@ def settings_view(request):
 
     context = {
         "sys_settings": sys_settings,
-        "channels": channels,
         "banks": bank_page,
         "roles": roles,
     }

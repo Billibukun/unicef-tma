@@ -2,6 +2,7 @@ from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 
 GROUPS = [
+    "UNICEF Admin",
     "UNICEF HQ",
     "National Admin",
     "State Admin",
