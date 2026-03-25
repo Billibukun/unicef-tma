@@ -3,7 +3,7 @@
     <!-- General -->
     <div>
         <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">General</h3>
-        <form method="post" action="{% url 'training_save_settings' training.pk %}" hx-post="{% url 'training_save_settings' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3">
+        <form method="post" action="{% url 'training_save_settings' training.pk %}" class="bg-[#F0F0F0] rounded-lg p-3">
             {% csrf_token %}
             <label class="flex items-center gap-2 text-sm text-[#1A1A1A] cursor-pointer">
                 <input type="checkbox" name="device_management" value="1" {% if training.device_management %}checked{% endif %} class="w-4 h-4 rounded border-gray-300 text-[#1CABE2]">
@@ -17,14 +17,13 @@
     <!-- Levels -->
     <div>
         <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Training Levels</h3>
-        <p class="text-[10px] text-gray-400 mb-2">Define levels (e.g. State Level, LGA Level). Each level has its own number of days.</p>
         {% for lv in levels %}
         <div class="flex items-center justify-between p-2.5 bg-[#F0F0F0] rounded-lg mb-1.5">
             <span class="text-sm font-medium text-[#1A1A1A]">{{ lv.name }} <span class="text-[10px] text-gray-400">{{ lv.days }} day{{ lv.days|pluralize }}</span></span>
-            <form method="post" action="{% url 'delete_level' lv.pk %}" hx-post="{% url 'delete_level' lv.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete {{ lv.name }}?">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+            <form method="post" action="{% url 'delete_level' lv.pk %}" onsubmit="return confirm('Delete?')">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
         </div>
         {% endfor %}
-        <form method="post" action="{% url 'training_add_level' training.pk %}" hx-post="{% url 'training_add_level' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="flex gap-2 mt-2">
+        <form method="post" action="{% url 'training_add_level' training.pk %}" class="flex gap-2 mt-2">
             {% csrf_token %}
             <input type="text" name="name" required placeholder="Level name" class="flex-1 px-2 py-1.5 rounded border border-gray-300 text-xs">
             <input type="number" name="days" value="1" min="1" placeholder="Days" class="w-20 px-2 py-1.5 rounded border border-gray-300 text-xs">
@@ -37,7 +36,6 @@
         <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Participant Categories</h3>
         {% for c in categories %}
         <div class="bg-[#F0F0F0] rounded-lg mb-2" x-data="{ editing: false }">
-            <!-- Display row -->
             <div x-show="!editing" class="flex items-center justify-between p-3">
                 <div class="flex-1">
                     <span class="text-sm font-medium text-[#1A1A1A]">{{ c.name }}</span>
@@ -45,12 +43,11 @@
                     <div class="text-[10px] text-gray-500 mt-0.5">{{ c.total_days }}d{% if c.arrival_day %} (incl. arrival){% endif %} × {{ c.dsa_rate|floatformat:0 }} DSA · Transport {{ c.local_transport|floatformat:0 }}{% if c.travel_mode != "none" %} · Travel{% endif %}{% if c.collect_nin %} · NIN{% endif %}{% if c.is_device_manager %} · Device Mgr{% endif %}</div>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <form method="post" action="{% url 'toggle_category_registration' c.pk %}" hx-post="{% url 'toggle_category_registration' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="inline">{% csrf_token %}<button class="text-[10px] px-2 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Closed{% endif %}</button></form>
+                    <form method="post" action="{% url 'toggle_category_registration' c.pk %}" class="inline">{% csrf_token %}<button class="text-[10px] px-2 py-0.5 rounded-full {% if c.is_registration_active %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-600{% endif %}">{% if c.is_registration_active %}Open{% else %}Closed{% endif %}</button></form>
                     <button @click="editing = true" class="text-[#1CABE2] text-xs">Edit</button>
-                    <form method="post" action="{% url 'delete_category' c.pk %}" hx-post="{% url 'delete_category' c.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete {{ c.name }}?" class="inline">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+                    <form method="post" action="{% url 'delete_category' c.pk %}" onsubmit="return confirm('Delete?')" class="inline">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
                 </div>
             </div>
-            <!-- Edit form -->
             <form x-show="editing" x-cloak method="post" action="{% url 'edit_category' c.pk %}" class="p-3">
                 {% csrf_token %}
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -79,7 +76,7 @@
             </form>
         </div>
         {% endfor %}
-        <form method="post" action="{% url 'training_add_category' training.pk %}" hx-post="{% url 'training_add_category' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
+        <form method="post" action="{% url 'training_add_category' training.pk %}" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
             {% csrf_token %}
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Name</label><input type="text" name="name" required placeholder="e.g. TOT Trainer" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
@@ -120,11 +117,11 @@
                     </div>
                     <div class="flex items-center gap-1.5">
                         <button @click="editCluster = true" class="text-[#1CABE2] text-xs">Edit</button>
-                        <form method="post" action="{% url 'delete_cluster' cl.pk %}" hx-post="{% url 'delete_cluster' cl.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Delete?">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
+                        <form method="post" action="{% url 'delete_cluster' cl.pk %}" onsubmit="return confirm('Delete?')">{% csrf_token %}<button class="text-red-400 text-xs">Del</button></form>
                     </div>
                 </div>
             </div>
-            <form x-show="editCluster" x-cloak method="post" action="{% url 'edit_cluster' cl.pk %}" hx-post="{% url 'edit_cluster' cl.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="p-3">
+            <form x-show="editCluster" x-cloak method="post" action="{% url 'edit_cluster' cl.pk %}" class="p-3">
                 {% csrf_token %}
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Cluster Name</label><input type="text" name="name" value="{{ cl.name }}" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
@@ -140,7 +137,7 @@
             </form>
         </div>
         {% endfor %}
-        <form method="post" action="{% url 'training_add_cluster' training.pk %}" hx-post="{% url 'training_add_cluster' training.pk %}" hx-target="#settings-content" hx-swap="outerHTML" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
+        <form method="post" action="{% url 'training_add_cluster' training.pk %}" class="bg-[#F0F0F0] rounded-lg p-3 mt-2">
             {% csrf_token %}
             <div class="grid grid-cols-2 gap-2">
                 <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Cluster Name</label><input type="text" name="name" required placeholder="e.g. Funtua" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
@@ -154,6 +151,7 @@
                 </div>
             </div>
             {% endif %}
+            <button type="submit" class="mt-2 px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Add Cluster</button>
         </form>
     </div>
 
@@ -176,11 +174,10 @@
     <!-- Training Managers -->
     <div>
         <h3 class="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide mb-2">Training Managers</h3>
-        <p class="text-[10px] text-gray-400 mb-2">Users who can manage participants, devices, and bank validation.</p>
         {% for m in training.managers.all %}
         <div class="flex items-center justify-between p-2.5 bg-[#F0F0F0] rounded-lg mb-1.5">
             <div><span class="text-sm font-medium text-[#1A1A1A]">{{ m.get_full_name|default:m.username }}</span>{% if m.email %}<span class="text-[10px] text-gray-400 ml-1">{{ m.email }}</span>{% endif %}</div>
-            <form method="post" action="{% url 'training_remove_manager' training.pk m.pk %}" hx-post="{% url 'training_remove_manager' training.pk m.pk %}" hx-target="#settings-content" hx-swap="outerHTML" hx-confirm="Remove?">{% csrf_token %}<button class="text-red-400 text-xs">Remove</button></form>
+            <form method="post" action="{% url 'training_remove_manager' training.pk m.pk %}" onsubmit="return confirm('Remove?')">{% csrf_token %}<button class="text-red-400 text-xs">Remove</button></form>
         </div>
         {% empty %}
         <p class="text-xs text-gray-400 mb-2 italic">No managers yet.</p>
@@ -192,5 +189,4 @@
             <div id="manager-search-results"></div>
         </div>
     </div>
-
 </div>

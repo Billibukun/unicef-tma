@@ -87,8 +87,7 @@ class TrainingCategory(models.Model):
     """Per-training category with payment columns, belongs to a level."""
     TRAVEL_MODE_CHOICES = [
         ("none", "No Travel"),
-        ("road", "Road (Auto-Mileage)"),
-        ("air", "Air (Claim-Based)"),
+        ("enabled", "Travel Enabled"),
     ]
 
     training = models.ForeignKey(

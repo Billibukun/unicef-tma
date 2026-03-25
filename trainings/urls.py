@@ -27,9 +27,6 @@ urlpatterns = [
     path("<int:pk>/search-managers/", views.search_managers, name="training_search_managers"),
     path("<int:pk>/add-manager/", views.add_manager, name="training_add_manager"),
     path("<int:pk>/remove-manager/<int:user_id>/", views.remove_manager, name="training_remove_manager"),
-    path("<int:pk>/search-device-managers/", views.search_device_managers, name="training_search_device_managers"),
-    path("<int:pk>/add-device-manager/", views.add_device_manager, name="training_add_device_manager"),
-    path("<int:pk>/remove-device-manager/<int:user_id>/", views.remove_device_manager, name="training_remove_device_manager"),
     path("<int:pk>/toggle-devices/", views.toggle_devices, name="training_toggle_devices"),
     path("<int:pk>/save-settings/", views.save_training_settings, name="training_save_settings"),
 ]

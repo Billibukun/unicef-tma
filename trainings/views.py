@@ -9,17 +9,8 @@ from .forms import TrainingForm
 from .models import Training, TrainingCategory, TrainingCluster, TrainingLevel
 
 
-def _settings_response(request, training):
-    """Return the settings modal partial for HTMX, or redirect with modal open."""
-    if request.headers.get("HX-Request"):
-        levels = training.levels.all()
-        categories = training.categories.prefetch_related("levels")
-        clusters = training.clusters.prefetch_related("lgas")
-        state_lgas = training.state.lgas.all() if training.state else []
-        return render(request, "trainings/partials/settings_modal_content.html", {
-            "training": training, "levels": levels, "categories": categories,
-            "clusters": clusters, "state_lgas": state_lgas,
-        })
+def _settings_redirect(training):
+    """Redirect back to training detail with settings modal open."""
     from django.http import HttpResponseRedirect
     from django.urls import reverse
     return HttpResponseRedirect(reverse("training_detail", args=[training.pk]) + "?settings=1")
@@ -192,7 +183,7 @@ def add_category(request, pk: int):
         name = request.POST.get("name", "").strip()
         dsa_rate = request.POST.get("dsa_rate", 0)
         local_transport = request.POST.get("local_transport", 0)
-        travel_mode = "road" if "travel_enabled" in request.POST else "none"
+        travel_mode = "enabled" if "travel_enabled" in request.POST else "none"
         expires = request.POST.get("registration_expires", "")
 
         level_ids = request.POST.getlist("levels")
@@ -217,7 +208,7 @@ def add_category(request, pk: int):
             if level_ids:
                 cat.levels.set(level_ids)
 
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -234,7 +225,7 @@ def add_cluster(request, pk: int):
             )
             if lga_ids:
                 cluster.lgas.set(lga_ids)
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -246,7 +237,7 @@ def toggle_category_registration(request, cat_id: int):
             # Clear expiry when reopening so it doesn't block
             cat.registration_expires = None
         cat.save(update_fields=["registration_open", "registration_expires"])
-    return _settings_response(request, cat.training)
+    return _settings_redirect(cat.training)
 
 
 @login_required
@@ -256,7 +247,7 @@ def edit_category(request, cat_id: int):
         cat.name = request.POST.get("name", cat.name).strip()
         cat.dsa_rate = request.POST.get("dsa_rate", cat.dsa_rate) or 0
         cat.local_transport = request.POST.get("local_transport", cat.local_transport) or 0
-        cat.travel_mode = "road" if "travel_enabled" in request.POST else "none"
+        cat.travel_mode = "enabled" if "travel_enabled" in request.POST else "none"
         cat.arrival_day = "arrival_day" in request.POST
         cat.collect_nin = "collect_nin" in request.POST
         cat.is_device_manager = "is_device_manager" in request.POST
@@ -279,7 +270,7 @@ def delete_category(request, cat_id: int):
     training = cat.training
     if request.method == "POST":
         cat.delete()
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -294,7 +285,7 @@ def edit_cluster(request, cluster_id: int):
         cluster.save()
         lga_ids = request.POST.getlist("lgas")
         cluster.lgas.set(lga_ids)
-    return _settings_response(request, cluster.training)
+    return _settings_redirect(cluster.training)
 
 
 @login_required
@@ -372,7 +363,7 @@ def delete_cluster(request, cluster_id: int):
     training = cluster.training
     if request.method == "POST":
         cluster.delete()
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -381,7 +372,7 @@ def update_cluster_lgas(request, cluster_id: int):
     if request.method == "POST":
         lga_ids = request.POST.getlist("lgas")
         cluster.lgas.set(lga_ids)
-    return _settings_response(request, cluster.training)
+    return _settings_redirect(cluster.training)
 
 
 @login_required
@@ -394,7 +385,7 @@ def add_level(request, pk: int):
             TrainingLevel.objects.get_or_create(
                 training=training, name=name, defaults={"days": days}
             )
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -403,7 +394,7 @@ def delete_level(request, level_id: int):
     training = level.training
     if request.method == "POST":
         level.delete()
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -509,7 +500,7 @@ def add_manager(request, pk: int):
         user_id = request.POST.get("user_id")
         user = get_object_or_404(CustomUser, pk=user_id)
         training.managers.add(user)
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -519,7 +510,7 @@ def remove_manager(request, pk: int, user_id: int):
         from accounts.models import CustomUser
         user = get_object_or_404(CustomUser, pk=user_id)
         training.managers.remove(user)
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -546,7 +537,7 @@ def add_device_manager(request, pk: int):
         from accounts.models import CustomUser
         user = get_object_or_404(CustomUser, pk=request.POST.get("user_id"))
         training.device_managers.add(user)
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -556,7 +547,7 @@ def remove_device_manager(request, pk: int, user_id: int):
         from accounts.models import CustomUser
         user = get_object_or_404(CustomUser, pk=user_id)
         training.device_managers.remove(user)
-    return _settings_response(request, training)
+    return _settings_redirect(training)
 
 
 @login_required
@@ -574,4 +565,4 @@ def save_training_settings(request, pk: int):
     if request.method == "POST":
         training.device_management = "device_management" in request.POST
         training.save(update_fields=["device_management"])
-    return _settings_response(request, training)
+    return _settings_redirect(training)
