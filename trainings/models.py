@@ -278,8 +278,9 @@ class TrainingAssignment(models.Model):
 
     @property
     def transport_amount(self):
+        """Local transport × total days (including arrival day if toggled)."""
         if self.training_category:
-            return self.training_category.local_transport
+            return self.training_category.local_transport * self.training_category.total_days
         return 0
 
     @property
