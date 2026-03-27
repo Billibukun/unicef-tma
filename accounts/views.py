@@ -23,3 +23,32 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect("login")
+
+
+def change_password(request):
+    from django.contrib.auth.decorators import login_required
+    from django.contrib.auth import update_session_auth_hash
+    from django.contrib import messages
+
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    if request.method == "POST":
+        current = request.POST.get("current_password", "")
+        new1 = request.POST.get("new_password", "")
+        new2 = request.POST.get("confirm_password", "")
+
+        if not request.user.check_password(current):
+            messages.error(request, "Current password is incorrect.")
+        elif new1 != new2:
+            messages.error(request, "New passwords don't match.")
+        elif len(new1) < 6:
+            messages.error(request, "Password must be at least 6 characters.")
+        else:
+            request.user.set_password(new1)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Password changed successfully.")
+            return redirect("dashboard")
+
+    return render(request, "accounts/change_password.html")

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password — UNICEF TMA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#1CABE2] min-h-screen flex items-center justify-center px-4">
+<div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+    <h1 class="text-xl font-bold text-[#1A1A1A] mb-4 text-center">Set New Password</h1>
+    {% if validlink %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5">New Password</label>
+            {{ form.new_password1 }}
+        </div>
+        <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Confirm Password</label>
+            {{ form.new_password2 }}
+        </div>
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 text-sm text-red-600">
+            {% for field in form %}{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+        <button type="submit" class="w-full py-3 bg-[#1CABE2] hover:bg-[#158fb8] text-white font-semibold rounded-xl">Reset Password</button>
+    </form>
+    {% else %}
+    <p class="text-sm text-red-600 text-center">This reset link is invalid or has expired. <a href="{% url 'password_reset' %}" class="text-[#1CABE2] hover:underline">Request a new one</a>.</p>
+    {% endif %}
+</div>
+</body>
+</html>

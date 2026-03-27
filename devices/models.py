@@ -72,11 +72,28 @@ class Device(models.Model):
         null=True, blank=True,
         related_name="uploaded_devices",
     )
+    scanned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="scanned_devices",
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="assigned_devices",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def is_valid_serial(self) -> bool:
+        import re
+        return bool(re.match(r'^RT7TITAN\d{7}$', self.serial_number))
 
     def __str__(self) -> str:
         label = self.brand or self.device_type

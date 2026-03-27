@@ -5,167 +5,73 @@
 
 <!-- Stats -->
 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="text-[10px] text-gray-400 uppercase">Users</div>
-        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ user_count }}</div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="text-[10px] text-gray-400 uppercase">Trainings</div>
-        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ training_count }}</div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="text-[10px] text-gray-400 uppercase">Participants</div>
-        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ participant_count }}</div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="text-[10px] text-gray-400 uppercase">Channels</div>
-        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ channel_count }}</div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="text-[10px] text-gray-400 uppercase">Banks</div>
-        <div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ bank_count }}</div>
-    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4"><div class="text-[10px] text-gray-400 uppercase">Users</div><div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ user_count }}</div></div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4"><div class="text-[10px] text-gray-400 uppercase">Trainings</div><div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ training_count }}</div></div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4"><div class="text-[10px] text-gray-400 uppercase">Participants</div><div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ participant_count }}</div></div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4"><div class="text-[10px] text-gray-400 uppercase">Channels</div><div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ channel_count }}</div></div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4"><div class="text-[10px] text-gray-400 uppercase">Banks</div><div class="text-xl font-bold text-[#1A1A1A] mt-1">{{ bank_count }}</div></div>
 </div>
 
-<!-- Quick Links -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-    <a href="{% url 'settings' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-            </div>
-            <div>
-                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">System Settings</div>
-                <div class="text-[10px] text-gray-400">Mileage, terminals, channels, banks, roles</div>
-            </div>
+<!-- Management Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <a href="{% url 'admin_users' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
         </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">User Management</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">{{ user_count }} users — add, edit, reset passwords</div>
     </a>
-    <a href="{% url 'training_list' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            </div>
-            <div>
-                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Manage Trainings</div>
-                <div class="text-[10px] text-gray-400">All training events</div>
-            </div>
+
+    <a href="{% url 'admin_channels' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Channels</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">{{ channel_count }} channels — NPC, Health, ALGON, UNICEF</div>
     </a>
-    <a href="{% url 'participant_list' %}" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#1CABE2] transition-colors group">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            </div>
-            <div>
-                <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">All Participants</div>
-                <div class="text-[10px] text-gray-400">Global participant registry</div>
-            </div>
+
+    <a href="{% url 'admin_upload_lgas' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group" onclick="event.preventDefault(); document.getElementById('lga-section').scrollIntoView({behavior:'smooth'});">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">LGA Management</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Bulk upload LGAs via CSV</div>
+    </a>
+
+    <a href="{% url 'settings' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Settings</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Financial rates, mileage, banks</div>
+    </a>
+
+    <a href="{% url 'training_list' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Trainings</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">{{ training_count }} trainings</div>
+    </a>
+
+    <a href="{% url 'participant_list' %}" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] group">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div class="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#1CABE2]">Participants</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">{{ participant_count }} participants</div>
     </a>
 </div>
 
-<!-- Users Management -->
-<div class="bg-white rounded-xl border border-gray-200 mb-5" x-data="{ showAddUser: false }">
-    <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-        <span class="text-sm font-semibold text-[#1A1A1A]">System Users ({{ user_count }})</span>
-        <button @click="showAddUser = !showAddUser" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]">Add User</button>
-    </div>
-
-    <!-- Add user form -->
-    <div x-show="showAddUser" x-cloak class="border-b border-gray-200 p-4 bg-[#F0F0F0]">
-        <form method="post" action="{% url 'admin_add_user' %}">
-            {% csrf_token %}
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Username</label><input type="text" name="username" required class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">First Name</label><input type="text" name="first_name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Last Name</label><input type="text" name="last_name" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Email</label><input type="email" name="email" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Password</label><input type="password" name="password" required class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs"></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Channel</label><select name="channel" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for ch in channels %}<option value="{{ ch.pk }}">{{ ch.name }}</option>{% endfor %}</select></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">State</label><select name="state" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for s in states %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}</select></div>
-                <div><label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Group</label><select name="group" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white"><option value="">—</option>{% for g in groups %}<option value="{{ g.pk }}">{{ g.name }}</option>{% endfor %}</select></div>
-            </div>
-            <button type="submit" class="mt-2 px-3 py-1.5 bg-[#1CABE2] text-white text-xs rounded-lg">Create User</button>
-        </form>
-    </div>
-
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead><tr class="border-b border-gray-200">
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Username</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Email</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">State</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Role</th>
-                <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
-                <th class="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Actions</th>
-            </tr></thead>
-            <tbody>
-                {% for u in users %}
-                <tr class="border-b border-gray-50 hover:bg-gray-50">
-                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ u.get_full_name|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs text-gray-500 font-mono">{{ u.username }}</td>
-                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.email|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.channel|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs text-gray-500">{{ u.state|default:"—" }}</td>
-                    <td class="px-5 py-2 text-xs">
-                        {% for g in u.groups.all %}<span class="px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2] text-[10px] mr-1">{{ g.name }}</span>{% endfor %}
-                        {% if u.pk in device_manager_ids %}<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px]">Device Mgr</span>{% endif %}
-                        {% if u.managed_trainings.exists %}<span class="px-1.5 py-0.5 rounded bg-green-50 text-green-700 text-[10px] ml-1">Training Mgr</span>{% endif %}
-                    </td>
-                    <td class="px-5 py-2 text-center">{% if u.is_superuser %}<span class="text-[10px] text-[#1CABE2]">Admin</span>{% elif u.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Inactive</span>{% endif %}</td>
-                    <td class="px-5 py-2">
-                        <form method="post" action="{% url 'admin_reset_password' u.pk %}" onsubmit="return confirm('Reset password for {{ u.username }}?')" class="inline">
-                            {% csrf_token %}
-                            <button class="text-[10px] text-[#1CABE2] hover:underline">Reset PW</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Channels -->
-<div class="bg-white rounded-xl border border-gray-200">
-    <div class="px-5 py-3 border-b border-gray-200">
-        <span class="text-sm font-semibold text-[#1A1A1A]">Channels</span>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead><tr class="border-b border-gray-200">
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Code</th>
-                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Description</th>
-                <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
-            </tr></thead>
-            <tbody>
-                {% for ch in channels %}
-                <tr class="border-b border-gray-50">
-                    <td class="px-5 py-2 font-medium text-[#1A1A1A]">{{ ch.name }}</td>
-                    <td class="px-5 py-2"><code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{{ ch.code }}</code></td>
-                    <td class="px-5 py-2 text-xs text-gray-500">{{ ch.description|default:"—" }}</td>
-                    <td class="px-5 py-2 text-center">{% if ch.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Inactive</span>{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Bulk LGA Upload -->
-<div class="bg-white rounded-xl border border-gray-200 mt-5">
-    <div class="px-5 py-3 border-b border-gray-200">
-        <span class="text-sm font-semibold text-[#1A1A1A]">Bulk LGA Upload</span>
-    </div>
+<!-- LGA Upload -->
+<div id="lga-section" class="bg-white rounded-xl border border-gray-200">
+    <div class="px-5 py-3 border-b border-gray-200"><span class="text-sm font-semibold text-[#1A1A1A]">Bulk LGA Upload</span></div>
     <div class="p-5">
-        <p class="text-xs text-gray-400 mb-3">Upload a CSV with two columns: <code class="bg-gray-100 px-1 rounded">state_name,lga_name</code> (one per line, no header needed).</p>
-        <form method="post" action="{% url 'admin_upload_lgas' %}" enctype="multipart/form-data" class="flex items-center gap-3">
+        <p class="text-[10px] text-gray-400 mb-2">CSV format: <code class="bg-gray-100 px-1 rounded">state_name,lga_name</code> (one per line)</p>
+        <form method="post" action="{% url 'admin_upload_lgas' %}" enctype="multipart/form-data" class="flex items-center gap-2">
             {% csrf_token %}
-            <input type="file" name="file" accept=".csv" required class="text-xs">
-            <button type="submit" class="px-3 py-1.5 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-xs font-medium rounded-lg">Upload</button>
+            <input type="file" name="file" accept=".csv" required class="text-xs flex-1">
+            <button type="submit" class="px-4 py-2 bg-[#1CABE2] text-white text-xs font-medium rounded-lg">Upload</button>
         </form>
     </div>
 </div>

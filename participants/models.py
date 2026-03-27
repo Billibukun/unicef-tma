@@ -48,11 +48,39 @@ class Participant(models.Model):
     )
     ward = models.CharField(max_length=200, blank=True)
     nin = models.CharField(max_length=11, blank=True, verbose_name="NIN")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="created_participants",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["last_name", "first_name"]
+
+    def save(self, *args, **kwargs):
+        import re
+        self.first_name = self.first_name.upper().strip() if self.first_name else ""
+        self.last_name = self.last_name.upper().strip() if self.last_name else ""
+        self.email = self.email.lower().strip() if self.email else ""
+        # Normalize phone to 0XXXXXXXXXX
+        if self.phone:
+            phone = self.phone.strip().strip("'\"")
+            digits = re.sub(r"\\D", "", phone)
+            if digits.startswith("234") and len(digits) >= 13:
+                digits = "0" + digits[3:]
+            if len(digits) == 10 and digits[0] in "789":
+                digits = "0" + digits
+            if len(digits) == 11 and digits.startswith("0"):
+                self.phone = digits
+        super().save(*args, **kwargs)
+
+    @property
+    def has_valid_phone(self) -> bool:
+        import re
+        return bool(self.phone and re.match(r"^0[789]\d{9}$", self.phone))
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
@@ -60,3 +88,14 @@ class Participant(models.Model):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def edit_token(self) -> str:
+        import hashlib
+        import hmac
+        secret = settings.SECRET_KEY
+        return hmac.new(secret.encode(), str(self.pk).encode(), hashlib.sha256).hexdigest()[:16]
+
+    @property
+    def edit_url(self) -> str:
+        return f"/participants/{self.pk}/update/{self.edit_token}/"

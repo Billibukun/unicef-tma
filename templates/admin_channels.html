@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Channels — Admin Tools{% endblock %}
+{% block content %}
+<a href="{% url 'admin_tools' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Admin Tools
+</a>
+
+<div class="bg-white rounded-xl border border-gray-200 max-w-2xl">
+    <div class="px-5 py-3 border-b border-gray-200"><span class="text-sm font-semibold text-[#1A1A1A]">Channels</span></div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-200 bg-gray-50">
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Code</th>
+                <th class="text-left px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Description</th>
+                <th class="text-center px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
+            <tbody>
+                {% for ch in channels %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-5 py-3 font-medium text-[#1A1A1A]">{{ ch.name }}</td>
+                    <td class="px-5 py-3"><code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{{ ch.code }}</code></td>
+                    <td class="px-5 py-3 text-xs text-gray-500">{{ ch.description|default:"—" }}</td>
+                    <td class="px-5 py-3 text-center">{% if ch.is_active %}<span class="text-[10px] text-green-600">Active</span>{% else %}<span class="text-[10px] text-gray-400">Off</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -59,6 +59,12 @@ class BankAccount(models.Model):
         help_text="Name of the account owner if this is a proxy account",
     )
     is_validated = models.BooleanField(default=False)
+    validated_by = models.ForeignKey(
+        "accounts.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="validated_accounts",
+    )
     validation_method = models.CharField(
         max_length=20,
         choices=VALIDATION_METHODS,

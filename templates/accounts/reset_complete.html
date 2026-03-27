@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset — UNICEF TMA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#1CABE2] min-h-screen flex items-center justify-center px-4">
+<div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <h1 class="text-xl font-bold text-[#1A1A1A] mb-2">Password Reset Complete</h1>
+    <p class="text-sm text-gray-500">You can now log in with your new password.</p>
+    <a href="{% url 'login' %}" class="inline-block mt-6 px-5 py-2.5 bg-[#1CABE2] text-white rounded-xl font-medium text-sm">Log In</a>
+</div>
+</body>
+</html>
