@@ -1,0 +1,100 @@
+{% extends "dm/base.html" %}
+{% block title %}{{ device.serial_number }} — UNICEF TMA{% endblock %}
+{% block content %}
+<a href="{% url 'dm:devices' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back to Devices
+</a>
+
+<div class="space-y-4 max-w-2xl">
+    {% if not device.is_valid_serial %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p class="text-sm font-semibold text-red-700">Invalid Serial Number</p>
+        <p class="text-xs text-red-600 mt-0.5">Current: <span class="font-mono font-bold">{{ device.serial_number }}</span> — Must be RT7TITAN + 7 digits.</p>
+        <form method="post" action="{% url 'device_fix_serial' pk=device.pk %}" class="flex items-end gap-2 mt-2">
+            {% csrf_token %}
+            <input type="text" name="serial_number" placeholder="RT7TITAN0025809" maxlength="15" pattern="RT7TITAN\d{7}" required class="flex-1 px-3 py-2 rounded-lg border border-red-300 text-sm font-mono focus:border-red-500 outline-none bg-white">
+            <button type="submit" class="px-3 py-2 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700">Fix</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Device Info -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-lg font-bold text-[#1A1A1A] font-mono">{{ device.serial_number }}</h2>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">IMEI 1</div>
+                <div class="text-xs font-mono text-[#1A1A1A] mt-0.5">{{ device.imei_1|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">IMEI 2</div>
+                <div class="text-xs font-mono text-[#1A1A1A] mt-0.5">{{ device.imei_2|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Brand / Model</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ device.brand }} {{ device.model_name }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Status</div>
+                <div class="text-xs font-medium mt-0.5">
+                    {% if device.status == "available" %}<span class="text-green-600">Available</span>
+                    {% elif device.status == "assigned" %}<span class="text-[#1CABE2]">Assigned</span>
+                    {% else %}{{ device.get_status_display }}{% endif %}
+                </div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Condition</div>
+                <div class="text-xs font-medium mt-0.5">
+                    <span class="{% if device.condition == 'good' %}text-green-600{% elif device.condition == 'faulty' %}text-amber-600{% else %}text-red-600{% endif %}">{{ device.get_condition_display }}</span>
+                </div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Accessories</div>
+                <div class="text-xs font-medium mt-0.5">{% if device.accessories_complete %}<span class="text-green-600">Complete</span>{% else %}<span class="text-red-600">Incomplete</span>{% endif %}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5" x-data="{ participantId: '{{ device.assigned_to_id|default:"" }}', participantName: '{{ device.assigned_to.full_name|default:""|escapejs }}' }">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Assignment</h3>
+
+        {% if device.assigned_to %}
+        <div class="flex items-center justify-between bg-[#F0F0F0] rounded-lg p-3 mb-3">
+            <div>
+                <div class="text-sm font-medium text-[#1A1A1A]">{{ device.assigned_to.full_name }}</div>
+                <div class="text-xs text-gray-400">{{ device.assigned_to.phone|default:"" }}</div>
+            </div>
+            {% for a in device.assigned_to.training_assignments.all %}
+                {% if a.training == dm_training %}
+                <a href="{% url 'dm:participant_profile' a.pk %}" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">View Profile</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'dm:device_assign' device.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="participant" :value="participantId">
+
+            <div x-show="participantId" class="flex items-center justify-between px-3 py-2 bg-green-50 rounded-lg mb-2">
+                <span class="text-sm font-medium text-green-800" x-text="participantName"></span>
+                <button type="button" @click="participantId = ''; participantName = ''" class="text-xs text-red-400 hover:text-red-600">Clear</button>
+            </div>
+
+            <input x-show="!participantId" type="text" placeholder="Search participant by name..."
+                   class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none"
+                   hx-get="{% url 'device_search_participant' %}" hx-trigger="keyup changed delay:300ms"
+                   hx-target="#dm-search-results" name="q">
+            <div id="dm-search-results"></div>
+
+            <div class="flex gap-2 mt-3">
+                <button type="submit" class="px-4 py-2 text-xs font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]">Save Assignment</button>
+                {% if device.assigned_to %}
+                <button type="submit" name="participant" value="" class="px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50" @click="participantId = ''">Unassign</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

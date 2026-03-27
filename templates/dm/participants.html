@@ -1,0 +1,63 @@
+{% extends "dm/base.html" %}
+{% block title %}Participants — {{ dm_lga }} — UNICEF TMA{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-lg font-bold text-[#1A1A1A]">Participants — {{ dm_lga }}</h1>
+    <span class="text-xs text-gray-400">{{ assignments.paginator.count }} total</span>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl border border-gray-200 p-3 mb-4">
+    <form method="get" class="flex flex-wrap items-center gap-2">
+        <input type="text" name="q" value="{{ current_q }}" placeholder="Search name or phone..." class="flex-1 min-w-[150px] px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+        <select name="status" class="px-2 py-1.5 rounded-lg border border-gray-300 text-xs bg-white">
+            <option value="">All</option>
+            <option value="attended" {% if current_status == "attended" %}selected{% endif %}>Attended</option>
+            <option value="absent" {% if current_status == "absent" %}selected{% endif %}>Absent</option>
+            <option value="unmarked" {% if current_status == "unmarked" %}selected{% endif %}>Unmarked</option>
+            <option value="no_bank" {% if current_status == "no_bank" %}selected{% endif %}>No Bank Account</option>
+            <option value="bad_phone" {% if current_status == "bad_phone" %}selected{% endif %}>Invalid Phone</option>
+        </select>
+        <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1CABE2] text-white">Go</button>
+        {% if current_q or current_status %}<a href="{% url 'dm:participants' %}" class="text-xs text-gray-400">Clear</a>{% endif %}
+    </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-200">
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Phone</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Category</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Bank</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Attended</th>
+        </tr></thead>
+        <tbody>
+        {% for a in assignments %}
+        <tr class="border-b border-gray-50 hover:bg-gray-50">
+            <td class="px-4 py-2 font-medium text-[#1A1A1A]"><a href="{% url 'dm:participant_profile' a.pk %}" class="hover:text-[#1CABE2]">{{ a.participant.full_name }}</a></td>
+            <td class="px-4 py-2 text-xs text-gray-500">{{ a.participant.phone|default:"—" }}</td>
+            <td class="px-4 py-2">{% if a.training_category %}<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ a.training_category.name }}</span>{% else %}—{% endif %}</td>
+            <td class="px-4 py-2 text-center">{% with ba=a.participant.bank_account %}{% if ba.is_validated %}<span class="text-[10px] text-green-600 font-medium">Yes</span>{% elif ba %}<span class="text-[10px] text-amber-600">Pending</span>{% else %}<span class="text-[10px] text-red-500 font-medium">No</span>{% endif %}{% endwith %}</td>
+            <td class="px-4 py-2 text-center" id="att-{{ a.pk }}">
+                {% include "dm/partials/attendance_btn.html" %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-gray-400 py-8 text-sm">No participants found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if assignments.has_other_pages %}
+<div class="bg-white rounded-xl border border-gray-200 mt-3 px-4 py-2.5 flex items-center justify-between text-xs">
+    <span class="text-gray-400">Page {{ assignments.number }}/{{ assignments.paginator.num_pages }}</span>
+    <div class="flex gap-1">
+        {% if assignments.has_previous %}<a href="?page={{ assignments.previous_page_number }}&q={{ current_q }}&status={{ current_status }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Prev</a>{% endif %}
+        {% if assignments.has_next %}<a href="?page={{ assignments.next_page_number }}&q={{ current_q }}&status={{ current_status }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Next</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

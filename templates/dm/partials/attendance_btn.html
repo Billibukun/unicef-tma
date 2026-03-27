@@ -1,0 +1,7 @@
+{% if a.attended == True %}
+<form method="post" action="{% url 'dm:toggle_attendance' a.pk %}" hx-post="{% url 'dm:toggle_attendance' a.pk %}" hx-target="#att-{{ a.pk }}" hx-swap="innerHTML" class="inline">{% csrf_token %}<button name="action" value="absent" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">Present</button></form>
+{% elif a.attended == False %}
+<form method="post" action="{% url 'dm:toggle_attendance' a.pk %}" hx-post="{% url 'dm:toggle_attendance' a.pk %}" hx-target="#att-{{ a.pk }}" hx-swap="innerHTML" class="inline">{% csrf_token %}<button name="action" value="present" class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-medium">Absent</button></form>
+{% else %}
+<form method="post" action="{% url 'dm:toggle_attendance' a.pk %}" hx-post="{% url 'dm:toggle_attendance' a.pk %}" hx-target="#att-{{ a.pk }}" hx-swap="innerHTML" class="inline">{% csrf_token %}<button name="action" value="present" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Mark</button></form>
+{% endif %}

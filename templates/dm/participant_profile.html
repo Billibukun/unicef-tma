@@ -1,0 +1,118 @@
+{% extends "dm/base.html" %}
+{% block title %}{{ participant.full_name }} — UNICEF TMA{% endblock %}
+{% block content %}
+<a href="{% url 'dm:participants' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back to Participants
+</a>
+
+<div class="space-y-4 max-w-2xl">
+    <!-- Header -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-lg font-bold text-[#1A1A1A]">{{ participant.full_name }}</h2>
+        <div class="flex flex-wrap gap-2 mt-1">
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-[#1CABE2] font-medium">{{ participant.channel|default:"—" }}</span>
+            {% if assignment.training_category %}<span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ assignment.training_category.name }}</span>{% endif %}
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ participant.lga|default:"No LGA" }}</span>
+        </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Personal Info</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Phone</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ participant.phone|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Email</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5 truncate">{{ participant.email|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">State</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ participant.state|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Organization</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ participant.health_organization|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Account -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Bank Account</h3>
+        {% if bank_account %}
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Bank</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ bank_account.bank }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Account Number</div>
+                <div class="text-xs font-mono font-medium text-[#1A1A1A] mt-0.5">{{ bank_account.account_number }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Account Name</div>
+                <div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ bank_account.account_name|default:"—" }}</div>
+            </div>
+            <div class="bg-[#F0F0F0] rounded-lg px-3 py-2">
+                <div class="text-[10px] text-gray-400 uppercase">Status</div>
+                <div class="text-xs font-medium mt-0.5">
+                    {% if bank_account.is_validated %}<span class="text-green-600">Validated</span>
+                    {% else %}<span class="text-amber-600">Not Validated</span>{% endif %}
+                </div>
+            </div>
+            {% if bank_account.is_proxy %}
+            <div class="col-span-2 bg-amber-50 rounded-lg px-3 py-2">
+                <div class="text-[10px] text-amber-600 uppercase">Proxy Account</div>
+                <div class="text-xs font-medium text-amber-700 mt-0.5">Owner: {{ bank_account.proxy_name|default:"—" }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-red-700">No bank account</p>
+                <p class="text-xs text-red-500">This participant needs to add their bank details.</p>
+            </div>
+            <a href="{% url 'bank_account_create' %}?participant={{ participant.pk }}" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 whitespace-nowrap">Add Bank</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Attendance -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Attendance</h3>
+        <div class="flex items-center gap-3" id="att-{{ assignment.pk }}">
+            {% with a=assignment %}{% include "dm/partials/attendance_btn.html" %}{% endwith %}
+        </div>
+    </div>
+
+    <!-- Device -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Assigned Device</h3>
+        {% if device %}
+        <div class="flex items-center justify-between bg-[#F0F0F0] rounded-lg p-3">
+            <div>
+                <div class="font-mono text-sm font-medium text-[#1A1A1A]">{{ device.serial_number }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ device.brand }} {{ device.model_name }} — <span class="{% if device.status == 'assigned' %}text-[#1CABE2]{% else %}text-green-600{% endif %}">{{ device.get_status_display }}</span></div>
+            </div>
+            <a href="{% url 'dm:device_detail' device.pk %}" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">View Device</a>
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400">No device assigned to this participant.</p>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    {% if participant.email %}
+    <div class="flex gap-2">
+        <form method="post" action="{% url 'dm:send_edit_link' assignment.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">Send Profile Edit Link</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

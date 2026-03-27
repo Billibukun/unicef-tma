@@ -1,0 +1,65 @@
+{% extends "dm/base.html" %}
+{% block title %}Devices — {{ dm_lga }} — UNICEF TMA{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-lg font-bold text-[#1A1A1A]">Devices — {{ dm_lga }}</h1>
+    <a href="{% url 'dm:scan' %}" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]">Scan New</a>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl border border-gray-200 p-3 mb-4">
+    <form method="get" class="flex flex-wrap items-center gap-2">
+        <input type="text" name="q" value="{{ current_q }}" placeholder="Serial or IMEI..." class="flex-1 min-w-[150px] px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-[#1CABE2] outline-none">
+        <select name="status" class="px-2 py-1.5 rounded-lg border border-gray-300 text-xs bg-white">
+            <option value="">All Status</option>
+            <option value="available" {% if current_status == "available" %}selected{% endif %}>Available</option>
+            <option value="assigned" {% if current_status == "assigned" %}selected{% endif %}>Assigned</option>
+        </select>
+        <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1CABE2] text-white">Go</button>
+        {% if current_q or current_status %}<a href="{% url 'dm:devices' %}" class="text-xs text-gray-400">Clear</a>{% endif %}
+    </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-200">
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Serial Number</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">IMEI 1</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Condition</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Assigned To</th>
+        </tr></thead>
+        <tbody>
+        {% for d in devices %}
+        <tr class="border-b border-gray-50 hover:bg-gray-50">
+            <td class="px-4 py-2 font-mono text-xs">
+                <a href="{% url 'dm:device_detail' d.pk %}" class="{% if d.is_valid_serial %}text-[#1CABE2]{% else %}text-red-600{% endif %} hover:underline">{{ d.serial_number }}</a>
+                {% if not d.is_valid_serial %}<span class="ml-1 px-1 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700">FIX</span>{% endif %}
+            </td>
+            <td class="px-4 py-2 font-mono text-[10px] text-gray-500">{{ d.imei_1|default:"—" }}</td>
+            <td class="px-4 py-2 text-center">
+                {% if d.status == "available" %}<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">Available</span>
+                {% elif d.status == "assigned" %}<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-[#1CABE2]">Assigned</span>
+                {% else %}<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ d.get_status_display }}</span>{% endif %}
+            </td>
+            <td class="px-4 py-2 text-center"><span class="text-[10px] px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span></td>
+            <td class="px-4 py-2 text-xs text-gray-600">{{ d.assigned_to.full_name|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-gray-400 py-8 text-sm">No devices found. <a href="{% url 'dm:scan' %}" class="text-[#1CABE2]">Scan one now</a>.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if devices.has_other_pages %}
+<div class="bg-white rounded-xl border border-gray-200 mt-3 px-4 py-2.5 flex items-center justify-between text-xs">
+    <span class="text-gray-400">Page {{ devices.number }}/{{ devices.paginator.num_pages }}</span>
+    <div class="flex gap-1">
+        {% if devices.has_previous %}<a href="?page={{ devices.previous_page_number }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Prev</a>{% endif %}
+        {% if devices.has_next %}<a href="?page={{ devices.next_page_number }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Next</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
