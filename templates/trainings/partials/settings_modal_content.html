@@ -61,6 +61,15 @@
                     <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="collect_nin" value="1" {% if c.collect_nin %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Collect NIN</label>
                     <label class="flex items-center gap-1.5 text-xs text-[#1A1A1A] cursor-pointer"><input type="checkbox" name="is_device_manager" value="1" {% if c.is_device_manager %}checked{% endif %} class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]"> Device Manager</label>
                 </div>
+                {% if c.is_device_manager %}
+                <div class="mt-2">
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Assign Devices To (target category)</label>
+                    <select name="device_target_category" class="w-full px-2 py-1.5 rounded border border-gray-300 text-xs bg-white">
+                        <option value="">— All Participants —</option>
+                        {% for other in categories %}{% if other.pk != c.pk %}<option value="{{ other.pk }}" {% if c.device_target_category_id == other.pk %}selected{% endif %}>{{ other.name }}</option>{% endif %}{% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 {% if levels %}
                 <div class="mt-2">
                     <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Levels</label>

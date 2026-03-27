@@ -4,7 +4,7 @@
 <a href="{% url 'training_list' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-5">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
 </a>
-<div x-data="{ tab: 'participants', settingsOpen: new URLSearchParams(window.location.search).has('settings') }">
+<div x-data="{ tab: new URLSearchParams(window.location.search).has('bp') ? 'banks' : new URLSearchParams(window.location.search).has('dp') ? 'devices' : 'participants', settingsOpen: new URLSearchParams(window.location.search).has('settings') }">
 <!-- Header -->
 <div class="bg-white rounded-xl border border-gray-200 mb-5 p-5">
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -14,6 +14,7 @@
         </div>
         <div class="flex gap-1.5">
             <a href="{% url 'training_edit' training.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Edit</a>
+            <a href="{% url 'training_exports_page' training.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Exports</a>
             <button @click="settingsOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1CABE2] text-white hover:bg-[#158fb8]">Settings</button>
             <a href="{% url 'training_delete' training.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50">Delete</a>
         </div>
@@ -46,11 +47,122 @@
 </div>
 {% endif %}
 
+<!-- Cluster Report -->
+{% if cluster_stats %}
+<div class="mb-5" x-data="{ clusterOpen: false }">
+    <button @click="clusterOpen = !clusterOpen" class="flex items-center gap-2 text-xs text-gray-500 hover:text-[#1CABE2] transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 transition-transform" :class="clusterOpen && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        Cluster Report ({{ cluster_stats|length }} clusters)
+    </button>
+    <div x-show="clusterOpen" x-collapse x-cloak class="mt-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 bg-[#F0F0F0]">
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Cluster</th>
+                    <th class="text-center px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase">LGAs</th>
+                    {% for cat in categories %}
+                    <th class="text-center px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase">{{ cat.name }}</th>
+                    {% endfor %}
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cs in cluster_stats %}
+                <tr class="border-b border-gray-50 {% if cs.count == 0 %}bg-red-50{% endif %}">
+                    <td class="px-4 py-2 font-medium text-[#1A1A1A] text-xs">
+                        {{ cs.cluster.name }}
+                        {% if cs.cluster.training_centre %}<div class="text-[10px] text-gray-400">{{ cs.cluster.training_centre }}</div>{% endif %}
+                        <div class="text-[10px] text-gray-400">{{ cs.lgas|join:", " }}</div>
+                    </td>
+                    <td class="text-center px-3 py-2 text-xs text-gray-500">{{ cs.lga_count }}</td>
+                    {% for cc in cs.cat_counts %}
+                    <td class="text-center px-3 py-2 text-xs {% if cc.count == 0 %}text-red-400 font-medium{% else %}text-[#1A1A1A]{% endif %}">{{ cc.count }}</td>
+                    {% endfor %}
+                    <td class="text-center px-4 py-2 text-xs font-bold {% if cs.count == 0 %}text-red-600{% else %}text-[#1CABE2]{% endif %}">{{ cs.count }}</td>
+                </tr>
+                {% endfor %}
+                {% if unassigned_cluster_count %}
+                <tr class="border-b border-gray-50 bg-amber-50">
+                    <td class="px-4 py-2 text-xs text-amber-700 font-medium">No Cluster Assigned</td>
+                    <td class="text-center px-3 py-2 text-xs text-amber-600">—</td>
+                    {% for cat in categories %}
+                    <td class="text-center px-3 py-2 text-xs text-amber-600">—</td>
+                    {% endfor %}
+                    <td class="text-center px-4 py-2 text-xs font-bold text-amber-700">{{ unassigned_cluster_count }}</td>
+                </tr>
+                {% endif %}
+                {% if no_lga_count %}
+                <tr class="bg-red-50">
+                    <td class="px-4 py-2" colspan="{{ categories|length|add:3 }}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-red-700 font-medium">{{ no_lga_count }} participant{{ no_lga_count|pluralize }} missing LGA</span>
+                            <form method="post" action="{% url 'training_send_edit_links' training.pk %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-1 text-[10px] font-medium rounded bg-red-600 text-white hover:bg-red-700">Email Edit Links</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-gray-200 bg-[#F0F0F0]">
+                    <td class="px-4 py-2 text-xs font-bold text-[#1A1A1A]" colspan="2">Grand Total</td>
+                    {% for cat in categories %}
+                    <td class="text-center px-3 py-2 text-xs font-bold text-[#1A1A1A]">{{ cat.assignments.count }}</td>
+                    {% endfor %}
+                    <td class="text-center px-4 py-2 text-xs font-bold text-[#1CABE2]">{{ total_assignments }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Duplicates -->
+{% if duplicates %}
+<div class="mb-5" x-data="{ dupOpen: true }">
+    <button @click="dupOpen = !dupOpen" class="flex items-center gap-2 text-xs text-red-600 hover:text-red-800 transition-colors font-semibold">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 transition-transform" :class="dupOpen && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        Duplicates Found ({{ duplicates|length }})
+    </button>
+    <div x-show="dupOpen" x-collapse x-cloak class="mt-2 space-y-2">
+        {% for dup in duplicates %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-1.5 py-0.5 text-[10px] font-bold rounded {% if dup.type == 'phone' %}bg-blue-100 text-blue-700{% elif dup.type == 'email' %}bg-purple-100 text-purple-700{% else %}bg-amber-100 text-amber-700{% endif %}">{{ dup.label }}</span>
+                <span class="text-xs font-mono font-medium text-red-700">{{ dup.value }}</span>
+                <span class="text-[10px] text-red-500">{{ dup.assignments|length }} registrations</span>
+            </div>
+            <div class="space-y-1">
+                {% for a in dup.assignments %}
+                <div class="flex items-center justify-between bg-white rounded-lg px-3 py-1.5 border border-red-100">
+                    <div class="text-xs">
+                        <span class="font-medium text-[#1A1A1A]">{{ a.participant.full_name }}</span>
+                        <span class="text-gray-400 ml-2">{{ a.participant.phone }}</span>
+                        {% if a.training_category %}<span class="text-gray-400 ml-2">{{ a.training_category.name }}</span>{% endif %}
+                        {% if a.participant.lga %}<span class="text-gray-400 ml-2">{{ a.participant.lga }}</span>{% endif %}
+                    </div>
+                    <form method="post" action="{% url 'training_remove_assignment' a.pk %}" onsubmit="return confirm('Remove {{ a.participant.full_name }} from this training?')">
+                        {% csrf_token %}
+                        <button type="submit" class="px-2 py-0.5 text-[10px] font-medium rounded bg-red-100 text-red-700 hover:bg-red-200">Remove</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Tabs -->
 <div class="flex gap-1 border-b border-gray-200 mb-4">
     <button @click="tab = 'participants'" :class="tab === 'participants' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Participants</button>
+    {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}<button @click="tab = 'banks'" :class="tab === 'banks' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Banks</button>{% endif %}
     {% if training.device_management %}<button @click="tab = 'devices'" :class="tab === 'devices' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Devices</button>{% endif %}
-    <button @click="tab = 'financials'" :class="tab === 'financials' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Financials</button>
+    {% if device_managers %}{% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" or user.groups.all.0.name == "State Admin" %}<button @click="tab = 'dm'" :class="tab === 'dm' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Device Managers ({{ device_managers|length }})</button>{% endif %}{% endif %}
+    {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}<button @click="tab = 'financials'" :class="tab === 'financials' ? 'border-[#1CABE2] text-[#1CABE2]' : 'border-transparent text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm font-medium border-b-2">Financials</button>{% endif %}
 </div>
 <!-- PARTICIPANTS -->
 <div x-show="tab === 'participants'">
@@ -71,7 +183,15 @@
     </div>
     <div class="bg-white rounded-xl border border-gray-200">
         <div class="px-4 py-2.5 border-b border-gray-100 flex flex-wrap items-center gap-2">
-            <form method="get" class="flex items-center gap-2"><select name="cat" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All Categories</option>{% for c in categories %}<option value="{{ c.pk }}" {% if cat_filter == c.pk|stringformat:"d" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select><select name="cluster" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All Clusters</option>{% for cl in clusters %}<option value="{{ cl.pk }}" {% if cluster_filter == cl.pk|stringformat:"d" %}selected{% endif %}>{{ cl.name }}</option>{% endfor %}</select><button type="submit" class="px-2 py-1 text-xs font-medium rounded bg-[#1CABE2] text-white">Go</button>{% if cat_filter or cluster_filter %}<a href="{% url 'training_detail' training.pk %}" class="text-xs text-gray-400">Clear</a>{% endif %}</form>
+            <form method="get" class="flex flex-wrap items-center gap-2">
+                <select name="cat" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All Categories</option>{% for c in categories %}<option value="{{ c.pk }}" {% if cat_filter == c.pk|stringformat:"d" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+                <select name="cluster" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All Clusters</option>{% for cl in clusters %}<option value="{{ cl.pk }}" {% if cluster_filter == cl.pk|stringformat:"d" %}selected{% endif %}>{{ cl.name }}</option>{% endfor %}</select>
+                <select name="lga" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All LGAs</option>{% for l in state_lgas %}<option value="{{ l.pk }}" {% if lga_filter == l.pk|stringformat:"d" %}selected{% endif %}>{{ l.name }}</option>{% endfor %}</select>
+                <select name="channel" class="px-2 py-1 text-xs rounded border border-gray-300 bg-white"><option value="">All Channels</option>{% for ch in channels %}<option value="{{ ch.pk }}" {% if channel_filter == ch.pk|stringformat:"d" %}selected{% endif %}>{{ ch.name }}</option>{% endfor %}</select>
+                <button type="submit" class="px-2 py-1 text-xs font-medium rounded bg-[#1CABE2] text-white">Go</button>
+                {% if cat_filter or cluster_filter or lga_filter or channel_filter %}<a href="{% url 'training_detail' training.pk %}" class="text-xs text-gray-400">Clear</a>{% endif %}
+            </form>
+            <a href="{% url 'training_export_participants' training.pk %}" class="ml-auto px-2 py-1 text-[10px] rounded bg-gray-100 text-gray-600 hover:bg-gray-200">Export CSV</a>
         </div>
         {% if assignments %}
         <div class="overflow-x-auto">
@@ -80,8 +200,9 @@
                 <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
                 <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
                 <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Category</th>
-                <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Cluster</th>
+                <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">LGA</th>
                 <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Bank</th>
+                <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Attended</th>
                 <th class="px-4 py-2"></th>
             </tr></thead>
             <tbody>
@@ -90,11 +211,29 @@
                 <td class="px-4 py-2 font-medium text-[#1A1A1A]"><a href="{% url 'training_assignment_detail' a.pk %}" class="hover:text-[#1CABE2]">{{ a.participant.full_name }}</a></td>
                 <td class="px-4 py-2 text-xs text-gray-500">{{ a.participant.channel|default:"—" }}</td>
                 <td class="px-4 py-2">{% if a.training_category %}<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ a.training_category.name }}</span>{% else %}—{% endif %}</td>
-                <td class="px-4 py-2 text-xs text-gray-500">{{ a.cluster|default:"—" }}</td>
-                <td class="px-4 py-2 text-center">{% with ba=a.participant.bank_account %}{% if ba.is_validated %}<span class="text-[10px] text-green-600">Verified</span>{% elif ba %}<span class="text-[10px] text-amber-600">Pending</span>{% else %}<span class="text-[10px] text-gray-400">—</span>{% endif %}{% endwith %}</td>
-                <td class="px-4 py-2 text-right flex items-center gap-2 justify-end">
-                    <a href="{% url 'training_edit_assignment' a.pk %}" class="text-[#1CABE2] text-[10px]">Edit</a>
-                    <form method="post" action="{% url 'training_remove_assignment' a.pk %}" onsubmit="return confirm('Remove?')" class="inline">{% csrf_token %}<button class="text-red-400 text-[10px]">Remove</button></form>
+                <td class="px-4 py-2 text-xs text-gray-500">{{ a.participant.lga|default:"—" }}</td>
+                <td class="px-4 py-2 text-center">{% with ba=a.participant.bank_account %}{% if ba.is_validated %}<span class="text-[10px] text-green-600">Yes</span>{% elif ba %}<span class="text-[10px] text-amber-600">No</span>{% else %}<span class="text-[10px] text-gray-400">—</span>{% endif %}{% endwith %}</td>
+                <td class="px-4 py-2 text-center" id="att-{{ a.pk }}">
+                    <form method="post" action="{% url 'training_toggle_attendance' a.pk %}"
+                          hx-post="{% url 'training_toggle_attendance' a.pk %}"
+                          hx-target="#att-{{ a.pk }}"
+                          hx-swap="innerHTML"
+                          class="inline">
+                        {% csrf_token %}
+                        {% if a.attended == True %}
+                        <button name="action" value="absent" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700">Present</button>
+                        {% elif a.attended == False %}
+                        <button name="action" value="attended" class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600">Absent</button>
+                        {% else %}
+                        <button name="action" value="attended" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Mark</button>
+                        {% endif %}
+                    </form>
+                </td>
+                <td class="px-4 py-2 text-right">
+                    <div class="flex items-center gap-1 justify-end">
+                        <a href="{% url 'training_edit_assignment' a.pk %}" class="text-[#1CABE2] text-[10px]">Edit</a>
+                        {% if not is_device_mgr %}<form method="post" action="{% url 'training_remove_assignment' a.pk %}" onsubmit="return confirm('Remove?')" class="inline">{% csrf_token %}<button class="text-red-400 text-[10px]">Rm</button></form>{% endif %}
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -105,19 +244,177 @@
         {% else %}<div class="py-8 text-center text-sm text-gray-400">No participants yet.</div>{% endif %}
     </div>
 </div>
+<!-- BANKS -->
+{% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}
+<div x-show="tab === 'banks'" x-cloak>
+    <div class="bg-white rounded-xl border border-gray-200">
+        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+            <span class="text-sm font-semibold text-[#1A1A1A]">Bank Accounts</span>
+            <a href="{% url 'bank_account_export' %}?training={{ training.pk }}" class="px-2 py-1 text-[10px] rounded bg-gray-100 text-gray-600 hover:bg-gray-200">Export CSV</a>
+        </div>
+        {% if all_assignments %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="border-b border-gray-200">
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Bank</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Account No.</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Account Name</th>
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Validated</th>
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Proxy</th>
+                </tr></thead>
+                <tbody>
+                    {% for a in all_assignments %}
+                    <tr class="border-b border-gray-50 hover:bg-gray-50">
+                        <td class="px-4 py-2 font-medium text-[#1A1A1A] text-xs">{{ a.participant.full_name }}</td>
+                        {% with ba=a.participant.bank_account %}
+                        {% if ba %}
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ ba.bank.short_name }}</td>
+                        <td class="px-4 py-2 text-xs font-mono text-gray-600">{{ ba.account_number }}</td>
+                        <td class="px-4 py-2 text-xs text-gray-600">{{ ba.account_name|default:"—" }}</td>
+                        <td class="px-4 py-2 text-center">{% if ba.is_validated %}<span class="text-[10px] text-green-600">Yes</span>{% else %}<span class="text-[10px] text-amber-600">No</span>{% endif %}</td>
+                        <td class="px-4 py-2 text-center">{% if ba.is_proxy %}<span class="text-[10px] text-amber-600">{{ ba.proxy_name }}</span>{% else %}—{% endif %}</td>
+                        {% else %}
+                        <td class="px-4 py-2 text-xs text-gray-300" colspan="5">No bank account</td>
+                        {% endif %}
+                        {% endwith %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if bank_page.has_other_pages %}
+        <div class="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+            <span class="text-gray-400">{{ bank_page.paginator.count }} total — page {{ bank_page.number }}/{{ bank_page.paginator.num_pages }}</span>
+            <div class="flex gap-1">
+                {% if bank_page.has_previous %}<a href="?bp={{ bank_page.previous_page_number }}" class="px-2 py-0.5 rounded border border-gray-200 text-gray-500" @click="tab = 'banks'">Prev</a>{% endif %}
+                {% if bank_page.has_next %}<a href="?bp={{ bank_page.next_page_number }}" class="px-2 py-0.5 rounded border border-gray-200 text-gray-500" @click="tab = 'banks'">Next</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="py-8 text-center text-sm text-gray-400">No participants yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 <!-- DEVICES -->
 {% if training.device_management %}
 <div x-show="tab === 'devices'" x-cloak>
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between"><span class="text-sm font-semibold text-[#1A1A1A]">Devices ({{ training.devices.count }})</span><a href="{% url 'device_scan' %}?training={{ training.pk }}" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs font-medium rounded-lg">Scan</a></div>
-        {% with devices=training.devices.all %}{% if devices %}<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-gray-200"><th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">S/N</th><th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">IMEI</th><th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Type</th><th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Assigned To</th><th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Status</th><th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Condition</th></tr></thead><tbody>{% for d in devices %}<tr class="border-b border-gray-50 hover:bg-gray-50"><td class="px-4 py-2 font-mono text-xs"><a href="{% url 'device_detail' d.pk %}" class="text-[#1CABE2]">{{ d.serial_number }}</a></td><td class="px-4 py-2 font-mono text-[10px] text-gray-500">{{ d.imei_1|default:"—" }}</td><td class="px-4 py-2 text-xs text-gray-600">{{ d.brand }} {{ d.model_name }}</td><td class="px-4 py-2 text-xs text-gray-600">{{ d.assigned_to|default:"—" }}</td><td class="px-4 py-2 text-center"><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ d.get_status_display }}</span></td><td class="px-4 py-2 text-center"><span class="text-[10px] px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="py-8 text-center text-sm text-gray-400">No devices yet.</div>{% endif %}{% endwith %}
+        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+            <span class="text-sm font-semibold text-[#1A1A1A]">Devices ({{ training_devices.count }}){% if user_cluster %} — {{ user_cluster.name }}{% elif user_lga %} — {{ user_lga }}{% endif %}</span>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'training_export_devices' training.pk %}" class="px-2 py-1 text-[10px] rounded bg-gray-100 text-gray-600 hover:bg-gray-200">Export</a>
+                <a href="{% url 'device_scan' %}?training={{ training.pk }}" class="px-3 py-1.5 bg-[#1CABE2] text-white text-xs font-medium rounded-lg">Scan</a>
+            </div>
+        </div>
+        {% if training_devices %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="border-b border-gray-200">
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">S/N</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">IMEI 1</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Assigned To</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">LGA</th>
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Condition</th>
+                </tr></thead>
+                <tbody>
+                {% for d in training_devices %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-4 py-2 font-mono text-xs">
+                        <a href="{% url 'device_detail' d.pk %}" class="{% if d.is_valid_serial %}text-[#1CABE2]{% else %}text-red-600{% endif %}">{{ d.serial_number }}</a>
+                        {% if not d.is_valid_serial %}<span class="ml-1 px-1 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700">FIX</span>{% endif %}
+                    </td>
+                    <td class="px-4 py-2 font-mono text-[10px] text-gray-500">{{ d.imei_1|default:"—" }}</td>
+                    <td class="px-4 py-2 text-xs text-gray-600">{{ d.assigned_to|default:"—" }}</td>
+                    <td class="px-4 py-2 text-xs text-gray-500">{{ d.lga|default:"—" }}</td>
+                    <td class="px-4 py-2 text-center"><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ d.get_status_display }}</span></td>
+                    <td class="px-4 py-2 text-center"><span class="text-[10px] px-1.5 py-0.5 rounded-full {% if d.condition == 'good' %}bg-green-50 text-green-700{% elif d.condition == 'faulty' %}bg-amber-50 text-amber-700{% else %}bg-red-50 text-red-600{% endif %}">{{ d.get_condition_display }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if dev_page.has_other_pages %}
+        <div class="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+            <span class="text-gray-400">{{ dev_page.paginator.count }} total — page {{ dev_page.number }}/{{ dev_page.paginator.num_pages }}</span>
+            <div class="flex gap-1">
+                {% if dev_page.has_previous %}<a href="?dp={{ dev_page.previous_page_number }}" class="px-2 py-0.5 rounded border border-gray-200 text-gray-500" @click="tab = 'devices'">Prev</a>{% endif %}
+                {% if dev_page.has_next %}<a href="?dp={{ dev_page.next_page_number }}" class="px-2 py-0.5 rounded border border-gray-200 text-gray-500" @click="tab = 'devices'">Next</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="py-8 text-center text-sm text-gray-400">No devices yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<!-- DEVICE MANAGERS -->
+{% if device_managers %}
+<div x-show="tab === 'dm'" x-cloak>
+    <div class="bg-white rounded-xl border border-gray-200">
+        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+            <span class="text-sm font-semibold text-[#1A1A1A]">Device Managers ({{ device_managers|length }})</span>
+            <div class="flex items-center gap-2">
+                <form method="post" action="{% url 'training_dm_send_all' training.pk %}" class="inline">{% csrf_token %}<button type="submit" class="px-3 py-1.5 text-[10px] font-medium rounded-lg bg-[#1CABE2] text-white hover:bg-[#158fb8]" onclick="return confirm('Send login details + guide to ALL device managers?')">Send All Logins</button></form>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="border-b border-gray-200">
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Name</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">LGA</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Cluster</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Category</th>
+                    <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Username</th>
+                    <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Login</th>
+                    <th class="px-4 py-2"></th>
+                </tr></thead>
+                <tbody>
+                    {% for dm in device_managers %}
+                    <tr class="border-b border-gray-50 hover:bg-gray-50">
+                        <td class="px-4 py-2 text-xs font-medium text-[#1A1A1A]">
+                            {{ dm.participant.full_name }}
+                            {% if dm.participant.phone %}<div class="text-[10px] text-gray-400">{{ dm.participant.phone }}</div>{% endif %}
+                        </td>
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ dm.participant.lga|default:"—" }}</td>
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ dm.cluster|default:"—" }}</td>
+                        <td class="px-4 py-2"><span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ dm.training_category.name }}</span></td>
+                        <td class="px-4 py-2 font-mono text-xs text-gray-600">{% if dm.participant.user %}{{ dm.participant.user.username }}{% else %}<span class="text-red-400">No account</span>{% endif %}</td>
+                        <td class="px-4 py-2 text-center">
+                            {% if dm.participant.user and dm.participant.user.is_active %}
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">Active</span>
+                            {% elif dm.participant.user %}
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">Disabled</span>
+                            {% else %}
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2">
+                            <div class="flex items-center gap-1">
+                                {% if dm.participant.user %}
+                                <form method="post" action="{% url 'training_dm_send_login' training.pk dm.participant.pk %}" class="inline">{% csrf_token %}<button type="submit" class="px-2 py-0.5 text-[10px] font-medium rounded bg-[#1CABE2]/10 text-[#1CABE2] hover:bg-[#1CABE2]/20" title="Reset password & send email">Send Login</button></form>
+                                <form method="post" action="{% url 'training_dm_toggle' training.pk dm.participant.user.pk %}" class="inline">{% csrf_token %}<button type="submit" class="px-2 py-0.5 text-[10px] font-medium rounded {% if dm.participant.user.is_active %}bg-red-50 text-red-600 hover:bg-red-100{% else %}bg-green-50 text-green-700 hover:bg-green-100{% endif %}">{% if dm.participant.user.is_active %}Disable{% else %}Enable{% endif %}</button></form>
+                                {% else %}
+                                <form method="post" action="{% url 'training_dm_create_login' training.pk dm.participant.pk %}" class="inline">{% csrf_token %}<button type="submit" class="px-2 py-0.5 text-[10px] font-medium rounded bg-green-50 text-green-700 hover:bg-green-100">Create Login</button></form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endif %}
 <!-- FINANCIALS -->
 <div x-show="tab === 'financials'" x-cloak>
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-4 py-2.5 border-b border-gray-100"><span class="text-sm font-semibold text-[#1A1A1A]">Payment Summary</span></div>
+        <div class="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between"><span class="text-sm font-semibold text-[#1A1A1A]">Payment Summary</span>{% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}<a href="{% url 'training_export_financials' training.pk %}" class="px-2 py-1 text-[10px] rounded bg-gray-100 text-gray-600 hover:bg-gray-200">Export CSV</a>{% endif %}</div>
         {% if financials %}<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-gray-200"><th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Category</th><th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">DSA/Day</th><th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Days</th><th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Transport</th><th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Travel</th><th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">People</th><th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase">Total</th></tr></thead><tbody>{% for f in financials %}<tr class="border-b border-gray-50"><td class="px-4 py-2 font-medium text-[#1A1A1A]">{{ f.category.name }}</td><td class="px-4 py-2 text-right font-mono text-xs">{{ f.category.dsa_rate|floatformat:0 }}</td><td class="px-4 py-2 text-right text-xs">{{ f.category.total_days }}</td><td class="px-4 py-2 text-right font-mono text-xs">{{ f.category.local_transport|floatformat:0 }}</td><td class="px-4 py-2 text-center text-xs">{{ f.category.get_travel_mode_display }}</td><td class="px-4 py-2 text-right text-xs">{{ f.count }}</td><td class="px-4 py-2 text-right font-mono font-medium">{{ f.total|floatformat:0 }}</td></tr>{% endfor %}</tbody><tfoot><tr class="border-t-2 border-gray-200 bg-[#F0F0F0]"><td class="px-4 py-2.5 font-bold text-[#1A1A1A]" colspan="6">Grand Total</td><td class="px-4 py-2.5 text-right font-mono font-bold text-[#1CABE2]">NGN {{ grand_total|floatformat:0 }}</td></tr></tfoot></table></div>{% else %}<div class="py-8 text-center text-sm text-gray-400">Add categories in Settings to see financials.</div>{% endif %}
     </div>
 </div>
