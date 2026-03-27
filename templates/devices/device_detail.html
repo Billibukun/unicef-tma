@@ -12,6 +12,29 @@
     </a>
 </div>
 
+{% if not device.is_valid_serial %}
+<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+            <p class="text-sm font-semibold text-red-700">Invalid Serial Number</p>
+            <p class="text-xs text-red-600 mt-0.5">Current: <span class="font-mono font-bold">{{ device.serial_number }}</span></p>
+            <p class="text-xs text-red-600">Must be <span class="font-mono">RT7TITAN</span> + 7 digits. Check the label on the back of the device.</p>
+        </div>
+    </div>
+    <form method="post" action="{% url 'device_fix_serial' pk=device.pk %}" class="flex items-end gap-2">
+        {% csrf_token %}
+        <div class="flex-1">
+            <label class="block text-[10px] font-semibold text-red-700 uppercase mb-1">Correct Serial Number</label>
+            <input type="text" name="serial_number" placeholder="RT7TITAN0025809" maxlength="15"
+                   pattern="RT7TITAN\d{7}" required
+                   class="w-full px-3 py-2 rounded-lg border border-red-300 text-sm font-mono focus:border-red-500 outline-none bg-white">
+        </div>
+        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors whitespace-nowrap">Fix Serial</button>
+    </form>
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Device Info Card -->
     <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">

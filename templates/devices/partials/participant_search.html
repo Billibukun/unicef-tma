@@ -2,16 +2,22 @@
 <div class="divide-y divide-gray-100 border border-gray-200 rounded-lg bg-white mt-1">
     {% for p in results %}
     <button type="button" onclick="this.closest('[x-data]')._x_dataStack[0].participantId='{{ p.pk }}'; this.closest('[x-data]')._x_dataStack[0].participantName='{{ p.full_name|escapejs }}'; document.getElementById('device-participant-results').innerHTML='';"
-            class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-        <div>
-            <span class="text-sm font-medium text-[#1A1A1A]">{{ p.full_name }}</span>
-            <span class="text-[10px] text-gray-400 ml-1">{{ p.channel|default:"" }}</span>
-            {% if p.phone %}<div class="text-[10px] text-gray-500">{{ p.phone }}</div>{% endif %}
+            class="w-full text-left px-3 py-2.5 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+            <div>
+                <span class="text-sm font-medium text-[#1A1A1A]">{{ p.full_name }}</span>
+                {% if p.channel %}<span class="text-[10px] text-gray-400 ml-1">{{ p.channel }}</span>{% endif %}
+            </div>
+            <span class="text-xs text-[#1CABE2]">Select</span>
         </div>
-        <span class="text-xs text-[#1CABE2]">Select</span>
+        <div class="text-[10px] text-gray-500 mt-0.5">
+            {% if p.phone %}{{ p.phone }}{% endif %}
+            {% if p.lga %} · {{ p.lga }}{% endif %}
+            {% if p.health_organization %} · {{ p.health_organization }}{% endif %}
+        </div>
     </button>
     {% endfor %}
 </div>
 {% elif q %}
-<div class="mt-1 px-3 py-2 text-center text-xs text-gray-400 bg-white border border-gray-200 rounded-lg">No participants found</div>
+<div class="mt-1 px-3 py-2 text-center text-xs text-gray-400 bg-white border border-gray-200 rounded-lg">No participants found in your LGA</div>
 {% endif %}

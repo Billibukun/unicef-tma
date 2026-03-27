@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/edit/", views.device_edit, name="device_edit"),
     path("<int:pk>/assign/", views.device_assign, name="device_assign"),
     path("<int:pk>/update-status/", views.device_update_status, name="device_update_status"),
+    path("<int:pk>/fix-serial/", views.device_fix_serial, name="device_fix_serial"),
     path("search/", views.device_search, name="device_search"),
     path("search-participant/", views.device_search_participant, name="device_search_participant"),
 ]

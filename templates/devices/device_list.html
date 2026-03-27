@@ -27,6 +27,16 @@
     </div>
 </div>
 
+{% if invalid_serial_count %}
+<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <div>
+        <p class="text-sm font-semibold text-red-700">{{ invalid_serial_count }} device{{ invalid_serial_count|pluralize }} with invalid serial number{{ invalid_serial_count|pluralize }}</p>
+        <p class="text-xs text-red-600 mt-0.5">Serial numbers must be <span class="font-mono">RT7TITAN</span> followed by 7 digits. Look for the red badges below and tap "Fix" to correct them.</p>
+    </div>
+</div>
+{% endif %}
+
 <!-- Filters -->
 <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
     <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
@@ -72,6 +82,7 @@
                 <th class="text-left px-4 py-3 font-medium">Brand / Model</th>
                 <th class="text-left px-4 py-3 font-medium">IMEI 1</th>
                 <th class="text-left px-4 py-3 font-medium">State</th>
+                <th class="text-left px-4 py-3 font-medium">LGA</th>
                 <th class="text-left px-4 py-3 font-medium">Status</th>
                 <th class="text-left px-4 py-3 font-medium">Assigned To</th>
                 <th class="px-4 py-3"></th>
@@ -80,11 +91,20 @@
         <tbody>
             {% for device in devices %}
             <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-mono text-sm text-gray-900">{{ device.serial_number }}</td>
+                <td class="px-4 py-3 font-mono text-sm {% if device.is_valid_serial %}text-gray-900{% else %}text-red-600{% endif %}">
+                    {{ device.serial_number }}
+                    {% if not device.is_valid_serial %}
+                    <span class="inline-flex items-center gap-1 ml-1">
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-red-100 text-red-700">INVALID</span>
+                        <a href="{% url 'device_detail' pk=device.pk %}" class="text-[10px] font-semibold text-red-600 hover:text-red-800 underline">Fix</a>
+                    </span>
+                    {% endif %}
+                </td>
                 <td class="px-4 py-3 text-gray-600">{{ device.get_device_type_display }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ device.brand }} {{ device.model_name }}</td>
                 <td class="px-4 py-3 font-mono text-sm text-gray-600">{{ device.imei_1|default:"-" }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ device.state|default:"-" }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ device.lga|default:"-" }}</td>
                 <td class="px-4 py-3">
                     {% if device.status == "available" %}
                     <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">Available</span>
@@ -113,4 +133,20 @@
         </tbody>
     </table>
 </div>
+{% if devices.has_other_pages %}
+<div class="bg-white rounded-xl border border-gray-200 mt-3 px-4 py-2.5 flex items-center justify-between text-xs">
+    <span class="text-gray-400">{{ devices.paginator.count }} total — page {{ devices.number }}/{{ devices.paginator.num_pages }}</span>
+    <div class="flex items-center gap-2">
+        <select onchange="window.location.href='?per_page='+this.value" class="px-2 py-1 text-[10px] rounded border border-gray-300 bg-white">
+            <option value="15" {% if devices.paginator.per_page == 15 %}selected{% endif %}>15</option>
+            <option value="50" {% if devices.paginator.per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if devices.paginator.per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+        <div class="flex gap-1">
+            {% if devices.has_previous %}<a href="?page={{ devices.previous_page_number }}&per_page={{ devices.paginator.per_page }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Prev</a>{% endif %}
+            {% if devices.has_next %}<a href="?page={{ devices.next_page_number }}&per_page={{ devices.paginator.per_page }}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Next</a>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

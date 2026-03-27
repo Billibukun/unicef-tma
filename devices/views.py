@@ -38,6 +38,13 @@ def device_list(request):
             Q(imei_2__icontains=q) | Q(brand__icontains=q)
         )
 
+    # Count invalid serials for warning banner
+    import re
+    invalid_serial_count = sum(
+        1 for d in Device.objects.values_list("serial_number", flat=True)
+        if not re.match(r'^RT7TITAN\d{7}$', d)
+    )
+
     from django.core.paginator import Paginator
     per_page = request.GET.get("per_page", 15)
     paginator = Paginator(qs, per_page)
@@ -46,6 +53,7 @@ def device_list(request):
     from common.models import State
     context = {
         "devices": devices_page,
+        "invalid_serial_count": invalid_serial_count,
         "states": State.objects.all(),
         "status_choices": Device.STATUS_CHOICES,
         "type_choices": Device.DEVICE_TYPE_CHOICES,
@@ -122,11 +130,17 @@ def device_scan(request):
     elif request.user.state:
         lgas = LGA.objects.filter(state=request.user.state)
 
+    # Get device manager's LGA for auto-selection
+    dm_lga = None
+    if hasattr(request.user, 'participant_profile') and request.user.participant_profile:
+        dm_lga = request.user.participant_profile.lga
+
     states = State.objects.all()
     return render(request, "devices/device_scan.html", {
         "training": training,
         "states": states,
         "lgas": lgas,
+        "dm_lga": dm_lga,
     })
 
 
@@ -146,14 +160,21 @@ def device_save_scanned(request):
     lga_id = request.POST.get("lga", "").strip() or None
     training_id = request.POST.get("training", "").strip() or None
 
+    import re
     errors = []
     if not serial_number:
         errors.append("Serial number is required.")
+    elif not re.match(r'^RT7TITAN\d{7}$', serial_number):
+        errors.append(f"Invalid serial number: '{serial_number}'. Must be RT7TITAN followed by 7 digits (e.g. RT7TITAN0025809). Please enter it manually if the scanner misread it.")
     if serial_number and Device.objects.filter(serial_number=serial_number).exists():
         errors.append(f"Device with serial number '{serial_number}' already exists.")
-    if imei_1 and Device.objects.filter(models.Q(imei_1=imei_1) | models.Q(imei_2=imei_1)).exists():
+    if imei_1 and (len(imei_1) != 15 or not imei_1.isdigit()):
+        errors.append(f"Invalid IMEI 1: '{imei_1}'. Must be exactly 15 digits.")
+    elif imei_1 and Device.objects.filter(models.Q(imei_1=imei_1) | models.Q(imei_2=imei_1)).exists():
         errors.append(f"IMEI {imei_1} already exists on another device.")
-    if imei_2 and Device.objects.filter(models.Q(imei_1=imei_2) | models.Q(imei_2=imei_2)).exists():
+    if imei_2 and (len(imei_2) != 15 or not imei_2.isdigit()):
+        errors.append(f"Invalid IMEI 2: '{imei_2}'. Must be exactly 15 digits.")
+    elif imei_2 and Device.objects.filter(models.Q(imei_1=imei_2) | models.Q(imei_2=imei_2)).exists():
         errors.append(f"IMEI {imei_2} already exists on another device.")
 
     if errors:
@@ -166,6 +187,14 @@ def device_save_scanned(request):
     status = request.POST.get("status", "available")
     accessories = request.POST.get("accessories_complete", "1") == "1"
     comment = request.POST.get("comment", "").strip()
+
+    # Auto-set state/LGA from device manager's profile if not provided
+    if not state_id and hasattr(request.user, 'participant_profile') and request.user.participant_profile:
+        p = request.user.participant_profile
+        if p.state_id:
+            state_id = p.state_id
+        if not lga_id and p.lga_id:
+            lga_id = p.lga_id
 
     device = Device.objects.create(
         serial_number=serial_number,
@@ -182,6 +211,7 @@ def device_save_scanned(request):
         accessories_complete=accessories,
         comment=comment,
         uploaded_by=request.user,
+        scanned_by=request.user,
     )
 
     return render(request, "devices/partials/device_saved.html", {
@@ -202,9 +232,11 @@ def device_assign(request, pk: int):
         if participant_id:
             participant = get_object_or_404(Participant, pk=participant_id)
             device.assigned_to = participant
+            device.assigned_by = request.user
             device.status = "assigned"
         else:
             device.assigned_to = None
+            device.assigned_by = None
             device.status = "available"
 
         if training_id:
@@ -264,15 +296,37 @@ def device_bulk_upload(request):
 
 @login_required
 def device_search_participant(request):
-    """HTMX: search participants for device assignment."""
+    """HTMX: search participants for device assignment, filtered by device manager's target category and LGA."""
     from django.db.models import Q
     q = request.GET.get("q", "").strip()
     results = []
     if len(q) >= 2:
-        results = Participant.objects.filter(
+        qs = Participant.objects.filter(
             Q(first_name__icontains=q) | Q(last_name__icontains=q) |
             Q(email__icontains=q) | Q(phone__icontains=q)
-        ).select_related("channel")[:10]
+        ).select_related("channel", "lga")
+
+        # Filter by device manager's LGA and target category
+        user = request.user
+        if hasattr(user, 'participant_profile') and user.participant_profile:
+            dm = user.participant_profile
+            # Filter to same LGA
+            if dm.lga:
+                qs = qs.filter(lga=dm.lga)
+            # Filter to target category's participants
+            from trainings.models import TrainingAssignment, TrainingCategory
+            dm_assignments = TrainingAssignment.objects.filter(participant=dm).select_related('training_category__device_target_category')
+            target_cat_ids = []
+            for a in dm_assignments:
+                if a.training_category and a.training_category.device_target_category:
+                    target_cat_ids.append(a.training_category.device_target_category_id)
+            if target_cat_ids:
+                target_participant_ids = TrainingAssignment.objects.filter(
+                    training_category_id__in=target_cat_ids
+                ).values_list('participant_id', flat=True)
+                qs = qs.filter(pk__in=target_participant_ids)
+
+        results = qs[:10]
     return render(request, "devices/partials/participant_search.html", {"results": results, "q": q})
 
 
@@ -297,6 +351,44 @@ def device_update_status(request, pk: int):
             created_by=request.user,
         )
         messages.success(request, f"Device {device.serial_number} updated.")
+
+    return redirect("device_detail", pk=pk)
+
+
+@login_required
+def device_fix_serial(request, pk: int):
+    """Let device manager correct an invalid serial number."""
+    import re
+    device = get_object_or_404(Device, pk=pk)
+
+    if request.method == "POST":
+        new_serial = request.POST.get("serial_number", "").strip()
+        errors = []
+
+        if not new_serial:
+            errors.append("Serial number is required.")
+        elif not re.match(r'^RT7TITAN\d{7}$', new_serial):
+            errors.append("Must be RT7TITAN followed by 7 digits (e.g. RT7TITAN0025809).")
+        elif Device.objects.filter(serial_number=new_serial).exclude(pk=pk).exists():
+            errors.append(f"Serial number '{new_serial}' already exists on another device.")
+
+        if errors:
+            messages.error(request, " ".join(errors))
+            return redirect("device_detail", pk=pk)
+
+        old_serial = device.serial_number
+        device.serial_number = new_serial
+        device.save(update_fields=["serial_number"])
+
+        DeviceLog.objects.create(
+            device=device,
+            status=device.status,
+            condition=device.condition,
+            note=f"Serial corrected: {old_serial} → {new_serial}",
+            created_by=request.user,
+        )
+        messages.success(request, f"Serial number updated to {new_serial}.")
+        return redirect("device_detail", pk=pk)
 
     return redirect("device_detail", pk=pk)
 
