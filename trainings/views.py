@@ -1257,6 +1257,62 @@ def training_export_participants(request, pk: int):
 
 
 @login_required
+def training_export_provisioning(request, pk: int):
+    """Export provisioning data — full participant profile for onboarding."""
+    if not _is_training_admin_or_manager(request.user):
+        messages.error(request, "Permission denied.")
+        return redirect("training_detail", pk=pk)
+
+    training = get_object_or_404(Training, pk=pk)
+    assignments = (
+        training.assignments
+        .select_related(
+            "participant", "participant__channel", "participant__state",
+            "participant__lga", "training_category", "cluster",
+        )
+        .order_by("training_category__name", "participant__last_name")
+    )
+
+    # Channel filter
+    channel_id = request.GET.get("channel")
+    if channel_id:
+        from django.db.models import Q
+        assignments = assignments.filter(
+            Q(training_category__channel_id=channel_id) |
+            Q(training_category__channel__isnull=True, training__channel_id=channel_id)
+        )
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{training.title}_provisioning.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        "S/N", "Full Name", "Phone", "NIN", "Email",
+        "Channel", "Organisation", "Role",
+        "State", "LGA", "Category", "Operational Area",
+    ])
+
+    for i, a in enumerate(assignments, 1):
+        p = a.participant
+        writer.writerow([
+            i,
+            p.full_name,
+            p.phone,
+            p.nin if hasattr(p, "nin") else "",
+            p.email,
+            str(p.channel) if p.channel else "",
+            p.health_organization,
+            p.channel_role,
+            str(p.state) if p.state else "",
+            str(p.lga) if p.lga else "",
+            a.training_category.name if a.training_category else "",
+            a.cluster.name if a.cluster else "",
+        ])
+
+    return response
+
+
+@login_required
 def training_export_devices(request, pk: int):
     """Export training devices as CSV."""
     user = request.user

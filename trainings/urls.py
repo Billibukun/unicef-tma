@@ -46,6 +46,7 @@ urlpatterns = [
     # Exports
     path("<int:pk>/export-financials/", views.training_export_financials, name="training_export_financials"),
     path("<int:pk>/export-participants/", views.training_export_participants, name="training_export_participants"),
+    path("<int:pk>/export-provisioning/", views.training_export_provisioning, name="training_export_provisioning"),
     path("<int:pk>/export-devices/", views.training_export_devices, name="training_export_devices"),
     path("<int:pk>/export-bank/", views.training_export_bank, name="training_export_bank"),
     path("<int:pk>/exports/", views.training_exports_page, name="training_exports_page"),
