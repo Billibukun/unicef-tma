@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ user_state }} — UNICEF TMA{% endblock %}
+{% block extra_head %}
+<style>
+    .bento-enter { animation: bentoIn 0.4s ease-out both; }
+    .bento-enter-1 { animation-delay: 0.05s; }
+    .bento-enter-2 { animation-delay: 0.1s; }
+    .bento-enter-3 { animation-delay: 0.15s; }
+    .bento-enter-4 { animation-delay: 0.2s; }
+    @keyframes bentoIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="text-xl font-bold text-[#1A1A1A]">{{ user_state|default:"Dashboard" }}</h1>
+    <p class="text-sm text-gray-400 mt-0.5">Welcome, {{ user.get_full_name|default:user.username }}{% if user_channel %} — {{ user_channel }}{% endif %}</p>
+</div>
+
+<!-- Bento Grid -->
+<div class="grid grid-cols-12 gap-4 mb-6">
+
+    <!-- State + Trainings (large) -->
+    <div class="col-span-12 sm:col-span-5 bg-white rounded-2xl border border-gray-200 p-6 bento-enter">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">My State</div>
+        <div class="text-2xl font-bold text-[#1A1A1A] mt-1">{{ user_state|default:"Not Set" }}</div>
+        <div class="flex items-center gap-4 mt-3">
+            <div>
+                <div class="text-xl font-bold text-[#1CABE2]">{{ training_count }}</div>
+                <div class="text-[10px] text-gray-400">Trainings</div>
+            </div>
+            <div>
+                <div class="text-xl font-bold text-[#1A1A1A]">{{ participant_count }}</div>
+                <div class="text-[10px] text-gray-400">Participants</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance (accent) -->
+    <div class="col-span-6 sm:col-span-4 bg-white rounded-2xl border border-gray-200 p-6 bento-enter bento-enter-1">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">Attendance</div>
+        <div class="text-4xl font-bold mt-2 {% if att_rate >= 80 %}text-green-600{% elif att_rate >= 50 %}text-amber-600{% else %}text-red-500{% endif %}">{{ att_rate }}%</div>
+        <div class="text-[10px] text-gray-400 mt-1">{{ attended_count }} of {{ participant_count }}</div>
+    </div>
+
+    <!-- Banks -->
+    <div class="col-span-6 sm:col-span-3 bg-white rounded-2xl border border-gray-200 p-6 bento-enter bento-enter-2">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">Banks</div>
+        <div class="text-2xl font-bold text-[#1A1A1A] mt-2">{{ bank_validated }}<span class="text-sm text-gray-300 font-normal">/{{ participant_count }}</span></div>
+        <div class="text-[10px] mt-1 {% if bank_missing %}text-red-500 font-medium{% else %}text-green-600{% endif %}">{% if bank_missing %}{{ bank_missing }} missing{% else %}All set{% endif %}</div>
+    </div>
+
+    <!-- Devices -->
+    <div class="col-span-6 sm:col-span-3 bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-2">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">Devices</div>
+        <div class="text-xl font-bold text-[#1A1A1A] mt-2">{{ device_total }}</div>
+        <div class="text-[10px] text-gray-400 mt-1">{{ device_assigned }} assigned</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-span-12 sm:col-span-9 bento-enter bento-enter-3">
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'event_list' %}" class="px-4 py-2.5 rounded-xl bg-[#1CABE2] text-white text-sm font-medium hover:bg-[#158fb8] transition-colors">View Events</a>
+            <a href="{% url 'training_list' %}" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-[#1A1A1A] hover:bg-gray-50 transition-colors">All Trainings</a>
+            <a href="{% url 'participant_list' %}" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-[#1A1A1A] hover:bg-gray-50 transition-colors">Participants</a>
+            <a href="{% url 'device_list' %}" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-[#1A1A1A] hover:bg-gray-50 transition-colors">Devices</a>
+        </div>
+    </div>
+</div>
+
+<!-- Warnings -->
+{% if bank_missing %}
+<div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 bento-enter bento-enter-3">
+    <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span class="text-sm text-red-700">{{ bank_missing }} participant{{ bank_missing|pluralize }} missing bank accounts across your trainings</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- My Trainings (cards) -->
+{% if training_cards %}
+<div class="mb-2"><span class="text-sm font-semibold text-[#1A1A1A]">My Trainings</span></div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bento-enter bento-enter-4">
+    {% for tc in training_cards %}
+    <a href="{% url 'training_detail' tc.training.pk %}" class="bg-white rounded-2xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-all group">
+        <div class="flex items-start justify-between">
+            <div class="min-w-0">
+                <div class="text-sm font-bold text-[#1A1A1A] group-hover:text-[#1CABE2] transition-colors truncate">{{ tc.training.title|truncatechars:50 }}</div>
+                <div class="text-[10px] text-gray-400 mt-0.5">{{ tc.training.start_date|date:"d M" }} – {{ tc.training.end_date|date:"d M Y" }}</div>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ml-2 {% if tc.training.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif tc.training.status == 'completed' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-[#1CABE2]{% endif %}">{{ tc.training.get_status_display }}</span>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ tc.training.channel }}</span>
+            {% if tc.training.event %}<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{{ tc.training.event.get_event_type_display }}</span>{% endif %}
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100">
+            <div>
+                <div class="text-lg font-bold text-[#1A1A1A]">{{ tc.participants }}</div>
+                <div class="text-[10px] text-gray-400">Participants</div>
+            </div>
+            <div>
+                <div class="text-lg font-bold {% if tc.att_rate >= 80 %}text-green-600{% elif tc.att_rate >= 50 %}text-amber-600{% else %}text-gray-400{% endif %}">{{ tc.att_rate }}%</div>
+                <div class="text-[10px] text-gray-400">Attendance</div>
+            </div>
+            <div>
+                <div class="text-lg font-bold text-[#1A1A1A]">{{ tc.attended }}</div>
+                <div class="text-[10px] text-gray-400">Attended</div>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-2xl border border-gray-200 p-8 text-center text-sm text-gray-400 bento-enter bento-enter-4">
+    No trainings assigned to you yet.
+</div>
+{% endif %}
+{% endblock %}

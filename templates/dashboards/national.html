@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — UNICEF TMA{% endblock %}
+{% block extra_head %}
+<style>
+    .bento-enter { animation: bentoIn 0.4s ease-out both; }
+    .bento-enter-1 { animation-delay: 0.05s; }
+    .bento-enter-2 { animation-delay: 0.1s; }
+    .bento-enter-3 { animation-delay: 0.15s; }
+    .bento-enter-4 { animation-delay: 0.2s; }
+    @keyframes bentoIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="text-xl font-bold text-[#1A1A1A]">National Overview</h1>
+    <p class="text-sm text-gray-400 mt-0.5">Welcome, {{ user.get_full_name|default:user.username }}</p>
+</div>
+
+<div class="grid grid-cols-12 gap-4 mb-6">
+
+    <!-- Events summary -->
+    <div class="col-span-12 sm:col-span-8 bg-white rounded-2xl border border-gray-200 p-6 bento-enter">
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-sm font-semibold text-[#1A1A1A]">Events</span>
+            <a href="{% url 'event_list' %}" class="text-xs text-[#1CABE2]">View all</a>
+        </div>
+        <div class="grid grid-cols-4 gap-4">
+            <div>
+                <div class="text-3xl font-bold text-[#1A1A1A]">{{ events|length }}</div>
+                <div class="text-xs text-gray-400 mt-1">Total</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-amber-600">{{ ongoing_events|length }}</div>
+                <div class="text-xs text-gray-400 mt-1">Ongoing</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-[#1CABE2]">{{ participant_count }}</div>
+                <div class="text-xs text-gray-400 mt-1">Participants</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold {% if att_rate >= 80 %}text-green-600{% elif att_rate >= 50 %}text-amber-600{% else %}text-gray-400{% endif %}">{{ att_rate }}%</div>
+                <div class="text-xs text-gray-400 mt-1">Attendance</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="col-span-12 sm:col-span-4 space-y-4 bento-enter bento-enter-1">
+        <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <div class="text-[10px] text-gray-400 uppercase font-semibold">Bank Accounts</div>
+            <div class="text-2xl font-bold text-[#1A1A1A] mt-1">{{ bank_validated }}<span class="text-sm text-gray-300 font-normal">/{{ bank_total }}</span></div>
+            {% if bank_missing %}<div class="text-[10px] text-red-500 mt-0.5">{{ bank_missing }} missing</div>{% endif %}
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <div class="text-[10px] text-gray-400 uppercase font-semibold">Devices</div>
+            <div class="text-2xl font-bold text-[#1A1A1A] mt-1">{{ device_total }}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">{{ device_assigned }} assigned</div>
+        </div>
+    </div>
+
+    <!-- Channel breakdown -->
+    {% if channel_stats %}
+    <div class="col-span-12 sm:col-span-6 bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-2">
+        <div class="text-sm font-semibold text-[#1A1A1A] mb-3">By Channel</div>
+        <div class="space-y-3">
+            {% for cs in channel_stats %}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-[#1CABE2]"></div>
+                    <span class="text-xs text-gray-600">{{ cs.channel.name }}</span>
+                </div>
+                <span class="text-sm font-mono font-bold text-[#1A1A1A]">{{ cs.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alerts -->
+    <div class="col-span-12 sm:col-span-6 space-y-2 bento-enter bento-enter-2">
+        {% if bank_missing %}
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-4">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span class="text-xs text-red-700 font-medium">{{ bank_missing }} participants missing bank accounts</span>
+            </div>
+        </div>
+        {% endif %}
+        {% if att_rate < 50 and participant_count > 0 %}
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-xs text-amber-700 font-medium">Attendance rate below 50% — {{ att_rate }}%</span>
+            </div>
+        </div>
+        {% endif %}
+        {% if not bank_missing and att_rate >= 50 %}
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-4">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-xs text-green-700 font-medium">All looking good</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Training Performance -->
+{% if training_cards %}
+<div class="bg-white rounded-2xl border border-gray-200 bento-enter bento-enter-3">
+    <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="text-sm font-semibold text-[#1A1A1A]">Training Performance</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead><tr class="border-b border-gray-100">
+                <th class="text-left px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">Training</th>
+                <th class="text-left px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">State</th>
+                <th class="text-left px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">Channel</th>
+                <th class="text-center px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">Participants</th>
+                <th class="text-center px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">Attendance</th>
+                <th class="text-center px-5 py-3 text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+            </tr></thead>
+            <tbody>
+            {% for tc in training_cards %}
+            <tr class="border-b border-gray-50 hover:bg-gray-50">
+                <td class="px-5 py-3"><a href="{% url 'training_detail' tc.training.pk %}" class="text-sm font-medium text-[#1A1A1A] hover:text-[#1CABE2]">{{ tc.training.title|truncatechars:45 }}</a></td>
+                <td class="px-5 py-3 text-xs text-gray-500">{{ tc.training.state }}</td>
+                <td class="px-5 py-3"><span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ tc.training.channel }}</span></td>
+                <td class="text-center px-5 py-3 text-xs font-medium">{{ tc.participants }}</td>
+                <td class="text-center px-5 py-3 text-xs font-bold {% if tc.att_rate >= 80 %}text-green-600{% elif tc.att_rate >= 50 %}text-amber-600{% else %}text-gray-400{% endif %}">{{ tc.att_rate }}%</td>
+                <td class="text-center px-5 py-3"><span class="text-[10px] px-1.5 py-0.5 rounded-full {% if tc.training.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif tc.training.status == 'completed' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-[#1CABE2]{% endif %}">{{ tc.training.get_status_display }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

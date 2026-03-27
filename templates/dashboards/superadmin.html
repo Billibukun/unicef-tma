@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — UNICEF TMA{% endblock %}
+{% block extra_head %}
+<style>
+    .bento-enter { animation: bentoIn 0.4s ease-out both; }
+    .bento-enter-1 { animation-delay: 0.05s; }
+    .bento-enter-2 { animation-delay: 0.1s; }
+    .bento-enter-3 { animation-delay: 0.15s; }
+    .bento-enter-4 { animation-delay: 0.2s; }
+    .bento-enter-5 { animation-delay: 0.25s; }
+    @keyframes bentoIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="text-xl font-bold text-[#1A1A1A]">Dashboard</h1>
+    <p class="text-sm text-gray-400 mt-0.5">Welcome back, {{ user.get_full_name|default:user.username }}</p>
+</div>
+
+<!-- Bento Grid -->
+<div class="grid grid-cols-12 gap-4 mb-6">
+
+    <!-- Hero Stats (large card) -->
+    <div class="col-span-12 lg:col-span-8 bg-white rounded-2xl border border-gray-200 p-6 bento-enter">
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-sm font-semibold text-[#1A1A1A]">Overview</span>
+            <span class="text-[10px] text-gray-400 uppercase">All Events</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+                <div class="text-3xl font-bold text-[#1A1A1A]">{{ events|length }}</div>
+                <div class="text-xs text-gray-400 mt-1">Events</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-[#1A1A1A]">{{ training_count }}</div>
+                <div class="text-xs text-gray-400 mt-1">Trainings</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-[#1CABE2]">{{ participant_count }}</div>
+                <div class="text-xs text-gray-400 mt-1">Participants</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold {% if att_rate >= 80 %}text-green-600{% elif att_rate >= 50 %}text-amber-600{% else %}text-gray-400{% endif %}">{{ att_rate }}%</div>
+                <div class="text-xs text-gray-400 mt-1">Attendance</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl border border-gray-200 p-6 bento-enter bento-enter-1">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Quick Actions</span>
+        <div class="mt-3 space-y-2">
+            <a href="{% url 'event_create' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#1CABE2] text-white hover:bg-[#158fb8] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span class="text-sm font-medium">New Event</span>
+            </a>
+            <a href="{% url 'event_list' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 text-[#1A1A1A] hover:bg-gray-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span class="text-sm">View Events</span>
+            </a>
+            {% if user.is_superuser %}
+            <a href="{% url 'admin_tools' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 text-[#1A1A1A] hover:bg-gray-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span class="text-sm">Admin Tools</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Banks + Devices row -->
+    <div class="col-span-6 sm:col-span-3 bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-2">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">Banks</div>
+        <div class="text-2xl font-bold text-[#1A1A1A] mt-2">{{ bank_validated }}</div>
+        <div class="text-[10px] text-gray-400 mt-1">of {{ bank_total }} validated</div>
+        {% if bank_missing %}<div class="text-[10px] text-red-500 mt-0.5">{{ bank_missing }} missing</div>{% endif %}
+    </div>
+    <div class="col-span-6 sm:col-span-3 bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-2">
+        <div class="text-[10px] text-gray-400 uppercase font-semibold">Devices</div>
+        <div class="text-2xl font-bold text-[#1A1A1A] mt-2">{{ device_total }}</div>
+        <div class="text-[10px] text-gray-400 mt-1">{{ device_assigned }} assigned</div>
+    </div>
+
+    <!-- Channel Summary -->
+    {% if channel_stats %}
+    <div class="col-span-12 sm:col-span-6 bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-3">
+        <div class="text-sm font-semibold text-[#1A1A1A] mb-3">By Channel</div>
+        <div class="space-y-2">
+            {% for cs in channel_stats %}
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-600">{{ cs.channel.name }}</span>
+                <span class="text-xs font-mono font-medium text-[#1A1A1A]">{{ cs.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ongoing Events -->
+    {% if ongoing_events %}
+    <div class="col-span-12 {% if channel_stats %}sm:col-span-6{% endif %} bg-white rounded-2xl border border-gray-200 p-5 bento-enter bento-enter-3">
+        <div class="text-sm font-semibold text-[#1A1A1A] mb-3">Ongoing</div>
+        <div class="space-y-2">
+            {% for e in ongoing_events %}
+            <a href="{% url 'event_detail' e.pk %}" class="flex items-center justify-between py-1.5 hover:text-[#1CABE2] transition-colors">
+                <div>
+                    <div class="text-xs font-medium text-[#1A1A1A]">{{ e.title|truncatechars:40 }}</div>
+                    <div class="text-[10px] text-gray-400">{% for t in e.trainings.all %}{{ t.state }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full {% if e.event_type == 'training' %}bg-blue-50 text-[#1CABE2]{% elif e.event_type == 'monitoring' %}bg-purple-50 text-purple-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ e.get_event_type_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- All Events -->
+<div class="bg-white rounded-2xl border border-gray-200 bento-enter bento-enter-4">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-[#1A1A1A]">All Events</h2>
+        <a href="{% url 'event_list' %}" class="text-xs text-[#1CABE2]">View all</a>
+    </div>
+    {% if events %}
+    <div class="divide-y divide-gray-50">
+        {% for e in events %}
+        <a href="{% url 'event_detail' e.pk %}" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="px-1.5 py-0.5 text-[10px] font-medium rounded-full shrink-0 {% if e.event_type == 'training' %}bg-blue-50 text-[#1CABE2]{% elif e.event_type == 'monitoring' %}bg-purple-50 text-purple-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ e.get_event_type_display }}</span>
+                <div class="min-w-0">
+                    <div class="text-sm font-medium text-[#1A1A1A] truncate">{{ e.title }}</div>
+                    <div class="text-[10px] text-gray-400">{{ e.start_date|date:"d M" }} – {{ e.end_date|date:"d M Y" }} · {% for t in e.trainings.all %}{{ t.state }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                </div>
+            </div>
+            <span class="text-[10px] font-medium rounded-full px-1.5 py-0.5 shrink-0 ml-2 {% if e.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif e.status == 'completed' %}bg-green-50 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{{ e.get_status_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-8 text-center text-sm text-gray-400">No events yet. <a href="{% url 'event_create' %}" class="text-[#1CABE2]">Create one</a>.</div>
+    {% endif %}
+</div>
+{% endblock %}

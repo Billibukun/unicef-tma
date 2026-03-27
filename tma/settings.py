@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "trainings",
     "participants",
     "devices",
+    "dm",
 ]
 
 MIDDLEWARE = [
@@ -56,10 +57,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tma.wsgi.application"
 
+# Session security — auto logout after 30 minutes of inactivity
+SESSION_COOKIE_AGE = 1800  # 30 minutes
+SESSION_SAVE_EVERY_REQUEST = True  # Reset timer on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            "timeout": 30,
+        },
     }
 }
 
@@ -101,3 +110,26 @@ BASE_URL = config("BASE_URL", default="http://127.0.0.1:8902")
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [BASE_URL]
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", default="mail.datadruidtech.org.ng")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="no-replies@datadruidtech.org.ng")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="UNICEF TMA <no-replies@datadruidtech.org.ng>")
+
+
+# --- SQLite WAL mode for concurrent access ---
+def _sqlite_wal(sender, connection, **kwargs):
+    if connection.vendor == "sqlite":
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL;")
+        cursor.execute("PRAGMA synchronous=NORMAL;")
+        cursor.execute("PRAGMA busy_timeout=30000;")
+        cursor.execute("PRAGMA cache_size=-64000;")
+
+
+from django.db.backends.signals import connection_created
+connection_created.connect(_sqlite_wal)

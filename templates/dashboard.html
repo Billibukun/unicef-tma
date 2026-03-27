@@ -3,10 +3,20 @@
 {% block title %}Dashboard — UNICEF TMA{% endblock %}
 
 {% block content %}
-<h1 class="text-xl font-bold text-gray-900 mb-6">Dashboard</h1>
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+        {% if is_state_admin and user_state %}
+        <p class="text-sm text-gray-500 mt-0.5">{{ user_state }}{% if user_channel %} — {{ user_channel }}{% endif %}</p>
+        {% endif %}
+    </div>
+    {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}
+    <a href="{% url 'event_create' %}" class="px-4 py-2 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-sm font-medium rounded-lg">New Event</a>
+    {% endif %}
+</div>
 
 <!-- Stat Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-gray-500">Trainings</span>
@@ -17,7 +27,6 @@
         <div class="text-2xl font-bold text-gray-900">{{ training_count }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ ongoing_count }} ongoing</div>
     </div>
-
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-gray-500">Participants</span>
@@ -26,9 +35,8 @@
             </div>
         </div>
         <div class="text-2xl font-bold text-gray-900">{{ participant_count }}</div>
-        <div class="text-xs text-gray-400 mt-1">Registered</div>
+        <div class="text-xs text-gray-400 mt-1">{% if is_state_admin and user_channel %}{{ user_channel }} channel{% else %}Registered{% endif %}</div>
     </div>
-
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-gray-500">Bank Accounts</span>
@@ -39,7 +47,6 @@
         <div class="text-2xl font-bold text-gray-900">{{ validated_bank_count }}</div>
         <div class="text-xs text-gray-400 mt-1">of {{ bank_account_count }} validated</div>
     </div>
-
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-gray-500">Devices</span>
@@ -54,16 +61,48 @@
 
 <!-- Quick Actions -->
 <div class="flex flex-wrap gap-2 mb-6">
-    <a href="{% url 'training_create' %}" class="px-4 py-2 bg-[#1CABE2] hover:bg-[#374EA2] text-white text-sm font-medium rounded-lg transition-colors">New Training</a>
-    <a href="{% url 'participant_create' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Add Participant</a>
-    <a href="{% url 'device_scan' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Scan Device</a>
-    <a href="{% url 'bank_account_export' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Export Bank Data</a>
+    {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}
+    <a href="{% url 'event_create' %}" class="px-4 py-2 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-sm font-medium rounded-lg">New Event</a>
+    {% endif %}
+    <a href="{% url 'event_list' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">View Events</a>
+    <a href="{% url 'training_list' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">View Trainings</a>
+    {% if not is_state_admin %}
+    <a href="{% url 'participant_create' %}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Add Participant</a>
+    {% endif %}
 </div>
+
+<!-- Events -->
+{% if recent_events %}
+<div class="bg-white rounded-xl border border-gray-200 mb-5">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">Events</h2>
+        <a href="{% url 'event_list' %}" class="text-xs text-[#1CABE2]">View all</a>
+    </div>
+    <div class="divide-y divide-gray-50">
+        {% for e in recent_events %}
+        <a href="{% url 'event_detail' e.pk %}" class="block px-5 py-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-[#1A1A1A]">{{ e.title }}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] font-medium rounded-full {% if e.event_type == 'training' %}bg-blue-50 text-[#1CABE2]{% elif e.event_type == 'monitoring' %}bg-purple-50 text-purple-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ e.get_event_type_display }}</span>
+                </div>
+                <span class="text-[10px] font-medium rounded-full px-1.5 py-0.5 {% if e.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif e.status == 'completed' %}bg-green-50 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{{ e.get_status_display }}</span>
+            </div>
+            <div class="text-xs text-gray-400 mt-0.5">
+                {{ e.start_date|date:"d M" }} – {{ e.end_date|date:"d M Y" }}
+                · {% for t in e.trainings.all %}{{ t.state }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- Recent Trainings -->
 <div class="bg-white rounded-xl border border-gray-200">
-    <div class="px-5 py-4 border-b border-gray-100">
-        <h2 class="text-sm font-semibold text-gray-900">Recent Trainings</h2>
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">{% if is_state_admin %}My Trainings{% else %}Recent Trainings{% endif %}</h2>
+        <a href="{% url 'training_list' %}" class="text-xs text-[#1CABE2]">View all</a>
     </div>
     {% if recent_trainings %}
     <div class="overflow-x-auto">
@@ -87,15 +126,10 @@
                     <td class="px-5 py-3 text-gray-600">{{ t.state|default:"-" }}</td>
                     <td class="px-5 py-3 text-gray-500 whitespace-nowrap">{{ t.start_date|date:"M d" }} – {{ t.end_date|date:"M d, Y" }}</td>
                     <td class="px-5 py-3">
-                        {% if t.status == "completed" %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">Completed</span>
-                        {% elif t.status == "ongoing" %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-[#1CABE2]">Ongoing</span>
-                        {% elif t.status == "planned" %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">Planned</span>
-                        {% else %}
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-600">Cancelled</span>
-                        {% endif %}
+                        {% if t.status == "completed" %}<span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-50 text-green-700">Completed</span>
+                        {% elif t.status == "ongoing" %}<span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-600">Ongoing</span>
+                        {% elif t.status == "planned" %}<span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-[#1CABE2]">Planned</span>
+                        {% else %}<span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-600">Cancelled</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -104,7 +138,7 @@
     </div>
     {% else %}
     <div class="px-5 py-8 text-center text-sm text-gray-400">
-        No trainings yet. <a href="{% url 'training_create' %}" class="text-[#1CABE2] hover:underline">Create the first one</a>.
+        No trainings yet.
     </div>
     {% endif %}
 </div>

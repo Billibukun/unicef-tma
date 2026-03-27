@@ -18,12 +18,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from participants.views import short_register
+
 urlpatterns = [
+    path("r/<str:code>/", short_register, name="short_register"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("participants/", include("participants.urls")),
     path("banks/", include("banks.urls")),
     path("trainings/", include("trainings.urls")),
     path("devices/", include("devices.urls")),
+    path("dm/", include("dm.urls")),
     path("", include("common.urls")),
 ]
