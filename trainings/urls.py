@@ -9,6 +9,12 @@ urlpatterns = [
     path("events/<int:pk>/", views.event_detail, name="event_detail"),
     path("events/<int:pk>/edit/", views.event_edit, name="event_edit"),
     path("events/<int:pk>/manage/", views.event_manage, name="event_manage"),
+    path("events/<int:pk>/search-users/", views.event_search_users, name="event_search_users"),
+    path("events/<int:pk>/add-team/", views.event_add_team_member, name="event_add_team"),
+    path("events/<int:pk>/remove-team/<int:member_id>/", views.event_remove_team_member, name="event_remove_team"),
+    path("events/<int:pk>/update-channel/<int:channel_id>/", views.event_update_channel, name="event_update_channel"),
+    path("events/<int:pk>/add-channel/", views.event_add_channel, name="event_add_channel"),
+    path("events/<int:pk>/assign-state-admin/", views.event_assign_state_admin, name="event_assign_state_admin"),
     # Trainings
     path("", views.training_list, name="training_list"),
     path("create/", views.training_create, name="training_create"),

@@ -1,0 +1,20 @@
+{% if results %}
+<div class="mt-1 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+    {% for u in results %}
+    <div class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+        <div>
+            <span class="text-xs font-medium text-[#1A1A1A]">{{ u.get_full_name|default:u.username }}</span>
+            <span class="text-[10px] text-gray-400 ml-1">{{ u.email }}</span>
+            {% for g in u.groups.all %}<span class="text-[9px] px-1 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{{ g.name }}</span>{% endfor %}
+        </div>
+        {% if target == "team_lead" %}
+        <form method="post" action="{% url 'event_add_team' event_pk %}" class="inline">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.pk }}"><input type="hidden" name="role" value="lead"><button class="text-[10px] px-2 py-0.5 rounded bg-[#1CABE2] text-white">Add as Lead</button></form>
+        {% elif target == "team_support" %}
+        <form method="post" action="{% url 'event_add_team' event_pk %}" class="inline">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.pk }}"><input type="hidden" name="role" value="support"><button class="text-[10px] px-2 py-0.5 rounded bg-[#1CABE2] text-white">Add as Support</button></form>
+        {% elif target == "state_admin" %}
+        <button type="button" onclick="document.getElementById('sa_user_id').value='{{ u.pk }}'; document.getElementById('sa_user_name').textContent='{{ u.get_full_name }}'; this.closest('.border').classList.add('hidden')" class="text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700">Select</button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

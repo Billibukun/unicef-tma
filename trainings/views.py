@@ -219,6 +219,125 @@ def event_manage(request, pk: int):
     })
 
 
+@login_required
+def event_search_users(request, pk: int):
+    """HTMX: search users for team member / responsible person assignment."""
+    from accounts.models import CustomUser
+    q = request.GET.get("q", "").strip()
+    target = request.GET.get("target", "team")  # team, responsible, state_admin
+    results = []
+    if len(q) >= 2:
+        from django.db.models import Q
+        results = CustomUser.objects.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+            Q(username__icontains=q) | Q(email__icontains=q),
+            is_active=True,
+        ).exclude(
+            participant_profile__isnull=False  # exclude DMs
+        )[:10]
+    return render(request, "trainings/partials/user_search_results.html", {
+        "results": results, "event_pk": pk, "target": target,
+    })
+
+
+@login_required
+def event_add_team_member(request, pk: int):
+    """Add a team member (lead or support) to an event."""
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == "POST":
+        user_id = request.POST.get("user_id")
+        role = request.POST.get("role", "support")
+        if user_id:
+            from accounts.models import CustomUser
+            user = get_object_or_404(CustomUser, pk=user_id)
+            EventTeamMember.objects.get_or_create(
+                event=event, user=user, defaults={"role": role}
+            )
+            messages.success(request, f"{user.get_full_name()} added as {role}.")
+    return redirect("event_manage", pk=pk)
+
+
+@login_required
+def event_remove_team_member(request, pk: int, member_id: int):
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == "POST":
+        EventTeamMember.objects.filter(pk=member_id, event=event).delete()
+    return redirect("event_manage", pk=pk)
+
+
+@login_required
+def event_update_channel(request, pk: int, channel_id: int):
+    """Update implementing partner and responsible person for an EventChannel."""
+    ec = get_object_or_404(EventChannel, pk=channel_id, event_id=pk)
+    if request.method == "POST":
+        ec.implementing_partner = request.POST.get("implementing_partner", "").strip()
+        ec.payment_section = request.POST.get("payment_section", "").strip()
+        ec.responsible_name = request.POST.get("responsible_name", "").strip()
+        resp_id = request.POST.get("responsible_person") or None
+        ec.responsible_person_id = resp_id
+        ec.is_primary = "is_primary" in request.POST
+        ec.save()
+        messages.success(request, f"{ec.channel.name} channel updated.")
+    return redirect("event_manage", pk=pk)
+
+
+@login_required
+def event_add_channel(request, pk: int):
+    """Add a channel to an event."""
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == "POST":
+        channel_id = request.POST.get("channel")
+        if channel_id:
+            EventChannel.objects.get_or_create(
+                event=event, channel_id=channel_id,
+                defaults={
+                    "implementing_partner": request.POST.get("implementing_partner", ""),
+                    "payment_section": request.POST.get("payment_section", ""),
+                }
+            )
+    return redirect("event_manage", pk=pk)
+
+
+@login_required
+def event_assign_state_admin(request, pk: int):
+    """Assign a state admin to a training under this event + send email."""
+    from django.conf import settings as s
+    from django.core.mail import send_mail
+    from accounts.models import CustomUser
+
+    event = get_object_or_404(Event, pk=pk)
+    if request.method == "POST":
+        user_id = request.POST.get("user_id")
+        training_id = request.POST.get("training_id")
+        if user_id and training_id:
+            user = get_object_or_404(CustomUser, pk=user_id)
+            training = get_object_or_404(Training, pk=training_id, event=event)
+            training.managers.add(user)
+
+            # Send notification email
+            if user.email:
+                base = getattr(s, "BASE_URL", "https://tma.worksiapps.com")
+                try:
+                    send_mail(
+                        f"UNICEF TMA — You've been assigned to {event.title}",
+                        f"Dear {user.get_full_name()},\n\n"
+                        f"You have been assigned as a State Admin for:\n\n"
+                        f"Event: {event.title}\n"
+                        f"State: {training.state}\n"
+                        f"Type: {event.get_event_type_display()}\n"
+                        f"Dates: {event.start_date} — {event.end_date}\n\n"
+                        f"Please log in to set up your state's operational areas:\n"
+                        f"{base}\n\n"
+                        f"---\nUNICEF Training Management Application",
+                        None, [user.email], fail_silently=True,
+                    )
+                except Exception:
+                    pass
+
+            messages.success(request, f"{user.get_full_name()} assigned to {training.state}.")
+    return redirect("event_manage", pk=pk)
+
+
 def _settings_redirect(training, request=None):
     """Redirect back to training detail or custom next URL."""
     from django.http import HttpResponseRedirect
