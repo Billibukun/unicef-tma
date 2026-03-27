@@ -4,6 +4,135 @@ from django.conf import settings
 from django.db import models
 
 
+class Event(models.Model):
+    """Parent container grouping Trainings across multiple states/channels."""
+    EVENT_TYPE_CHOICES = [
+        ("training", "Training"),
+        ("monitoring", "Monitoring"),
+        ("workshop", "Workshop/Meeting"),
+    ]
+    STATUS_CHOICES = [
+        ("planned", "Planned"),
+        ("ongoing", "Ongoing"),
+        ("completed", "Completed"),
+        ("closed", "Closed/Disbursed"),
+        ("cancelled", "Cancelled"),
+    ]
+    TEAM_ROLE_CHOICES = [
+        ("lead", "Output Lead"),
+        ("support", "Support Team"),
+    ]
+
+    title = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default="training")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
+    # Keep these for backwards compat, but they're being replaced by EventChannel.implementing_partner and EventTeamMember
+    implementing_partner = models.CharField(max_length=300, blank=True)
+    responsible_officer = models.CharField(max_length=300, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    states = models.ManyToManyField(
+        "common.State", blank=True, related_name="events",
+    )
+    global_responsible = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="globally_responsible_events",
+        help_text="Overall person responsible for this event",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="created_events",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self) -> str:
+        return self.title
+
+    @property
+    def features(self) -> dict:
+        if self.event_type == "training":
+            return {"categories": True, "clusters": True, "levels": True, "travel": True,
+                    "devices": True, "attendance": True, "registration": True,
+                    "forms": False, "reports": False, "payments": True, "banks": True}
+        elif self.event_type == "monitoring":
+            return {"categories": False, "clusters": False, "levels": False, "travel": False,
+                    "devices": False, "attendance": True, "registration": False,
+                    "forms": True, "reports": True, "payments": False, "banks": False}
+        else:  # workshop
+            return {"categories": True, "clusters": False, "levels": False, "travel": True,
+                    "devices": False, "attendance": True, "registration": False,
+                    "forms": False, "reports": False, "payments": True, "banks": True}
+
+    @property
+    def total_participants(self) -> int:
+        return sum(t.participant_count for t in self.trainings.all())
+
+
+class EventChannel(models.Model):
+    """Links an Event to a Channel with payment responsibility info."""
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="event_channels",
+    )
+    channel = models.ForeignKey(
+        "common.Channel", on_delete=models.PROTECT, related_name="event_channels",
+    )
+    payment_section = models.CharField(
+        max_length=200, blank=True,
+        help_text="e.g. Field Office, CP Section",
+    )
+    responsible_person = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="responsible_event_channels",
+    )
+    responsible_name = models.CharField(
+        max_length=200, blank=True,
+        help_text="Fallback name if responsible person has no user account",
+    )
+    implementing_partner = models.CharField(
+        max_length=300, blank=True,
+        help_text="Organization paying for this channel (e.g. NPC HQ ABUJA)",
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text="Primary payment channel for this event",
+    )
+
+    class Meta:
+        unique_together = ["event", "channel"]
+        ordering = ["channel__name"]
+
+    def __str__(self) -> str:
+        return f"{self.event.title} — {self.channel.name}"
+
+
+class EventTeamMember(models.Model):
+    """Team members responsible for managing an event."""
+    ROLE_CHOICES = [
+        ("lead", "Output Lead"),
+        ("support", "Support Team"),
+    ]
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="team_members",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="event_team_memberships",
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="support")
+
+    class Meta:
+        unique_together = ["event", "user"]
+        ordering = ["role", "user__first_name"]
+
+    def __str__(self) -> str:
+        return f"{self.user.get_full_name()} ({self.get_role_display()})"
+
+
 class Training(models.Model):
     MODALITY_CHOICES = [
         ("in_person", "In-Person"),
@@ -17,6 +146,11 @@ class Training(models.Model):
         ("cancelled", "Cancelled"),
     ]
 
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="trainings",
+        help_text="Parent event (null for legacy trainings)",
+    )
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     implementing_partner = models.CharField(max_length=300, blank=True)
@@ -93,6 +227,11 @@ class TrainingCategory(models.Model):
     training = models.ForeignKey(
         Training, on_delete=models.CASCADE, related_name="categories",
     )
+    channel = models.ForeignKey(
+        "common.Channel", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="training_categories",
+        help_text="Override channel (defaults to training's channel if blank)",
+    )
     levels = models.ManyToManyField(
         TrainingLevel, blank=True,
         related_name="categories",
@@ -111,6 +250,13 @@ class TrainingCategory(models.Model):
         default=False,
         help_text="People in this category can manage devices for this training",
     )
+    device_target_category = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="managed_by_categories",
+        help_text="When assigning devices, only show participants from this category",
+    )
 
     # Payment columns
     dsa_rate = models.DecimalField(
@@ -128,6 +274,7 @@ class TrainingCategory(models.Model):
 
     # Registration link
     slug = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    short_code = models.CharField(max_length=8, blank=True, db_index=True)
     registration_open = models.BooleanField(default=True)
     registration_expires = models.DateTimeField(null=True, blank=True)
 
@@ -137,6 +284,11 @@ class TrainingCategory(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def effective_channel(self):
+        """Channel for this category — own channel or training's channel."""
+        return self.channel or self.training.channel
 
     @property
     def total_days(self):
@@ -165,8 +317,24 @@ class TrainingCategory(models.Model):
     def people_count(self):
         return self.assignments.count()
 
+    def save(self, *args, **kwargs):
+        if not self.short_code:
+            import hashlib
+            raw = f"{self.slug}{self.name}"
+            self.short_code = hashlib.md5(raw.encode()).hexdigest()[:6].upper()
+            while TrainingCategory.objects.filter(short_code=self.short_code).exists():
+                import secrets
+                self.short_code = secrets.token_hex(3).upper()
+        super().save(*args, **kwargs)
+
     @property
     def registration_url(self):
+        from django.conf import settings
+        base = getattr(settings, "BASE_URL", "").rstrip("/")
+        return f"{base}/r/{self.short_code}/"
+
+    @property
+    def registration_url_long(self):
         from django.conf import settings
         base = getattr(settings, "BASE_URL", "").rstrip("/")
         return f"{base}/participants/register/{self.slug}/"
@@ -259,6 +427,20 @@ class TrainingAssignment(models.Model):
     return_mileage = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     return_air_claim = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
+    attended = models.BooleanField(
+        null=True, blank=True, default=None,
+        help_text="None=not marked, True=attended, False=did not attend",
+    )
+    outbound_airline = models.CharField(max_length=100, blank=True)
+    return_airline = models.CharField(max_length=100, blank=True)
+    outbound_ticket = models.FileField(upload_to="tickets/", blank=True, null=True)
+    return_ticket = models.FileField(upload_to="tickets/", blank=True, null=True)
+    attended_marked_by = models.ForeignKey(
+        "accounts.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="+",
+    )
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

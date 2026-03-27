@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Events — UNICEF TMA{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Events</h1>
+    {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}
+    <a href="{% url 'event_create' %}" class="px-4 py-2 rounded-lg text-sm font-medium bg-[#1CABE2] hover:bg-[#158fb8] text-white">Create Event</a>
+    {% endif %}
+</div>
+
+{% if events %}
+<div class="space-y-3">
+    {% for event in events %}
+    <a href="{% url 'event_detail' event.pk %}" class="block bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1CABE2] transition-colors">
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-base font-bold text-[#1A1A1A]">{{ event.title }}</h2>
+                    <span class="px-2 py-0.5 text-[10px] font-medium rounded-full {% if event.event_type == 'training' %}bg-blue-50 text-[#1CABE2]{% elif event.event_type == 'monitoring' %}bg-purple-50 text-purple-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ event.get_event_type_display }}</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-1">
+                    {{ event.start_date|date:"d M Y" }} — {{ event.end_date|date:"d M Y" }}
+                    {% if event.implementing_partner %}· {{ event.implementing_partner }}{% endif %}
+                </div>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-medium rounded-full {% if event.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif event.status == 'completed' %}bg-green-50 text-green-700{% elif event.status == 'planned' %}bg-blue-50 text-[#1CABE2]{% else %}bg-red-50 text-red-600{% endif %}">{{ event.get_status_display }}</span>
+        </div>
+        <div class="flex flex-wrap gap-3 mt-3">
+            {% for t in event.trainings.all %}
+            <span class="text-[10px] px-2 py-0.5 rounded bg-[#F0F0F0] text-gray-600">{{ t.state }}</span>
+            {% endfor %}
+            {% for ec in event.event_channels.all %}
+            <span class="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-[#1CABE2]">{{ ec.channel }}</span>
+            {% endfor %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+    No events yet. {% if user.is_superuser or user.groups.all.0.name == "UNICEF Admin" %}<a href="{% url 'event_create' %}" class="text-[#1CABE2]">Create one</a>.{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -3,6 +3,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Events
+    path("events/", views.event_list, name="event_list"),
+    path("events/create/", views.event_create, name="event_create"),
+    path("events/<int:pk>/", views.event_detail, name="event_detail"),
+    path("events/<int:pk>/edit/", views.event_edit, name="event_edit"),
+    path("events/<int:pk>/manage/", views.event_manage, name="event_manage"),
+    # Trainings
     path("", views.training_list, name="training_list"),
     path("create/", views.training_create, name="training_create"),
     path("<int:pk>/", views.training_detail, name="training_detail"),
@@ -24,9 +31,23 @@ urlpatterns = [
     path("<int:pk>/search-participants/", views.search_participants_for_training, name="training_search_participants"),
     path("<int:pk>/assign-participant/", views.assign_participant_to_training, name="training_assign_participant"),
     path("assignment/<int:assignment_id>/remove/", views.remove_assignment, name="training_remove_assignment"),
+    path("assignment/<int:assignment_id>/attendance/", views.toggle_attendance, name="training_toggle_attendance"),
     path("<int:pk>/search-managers/", views.search_managers, name="training_search_managers"),
     path("<int:pk>/add-manager/", views.add_manager, name="training_add_manager"),
     path("<int:pk>/remove-manager/<int:user_id>/", views.remove_manager, name="training_remove_manager"),
     path("<int:pk>/toggle-devices/", views.toggle_devices, name="training_toggle_devices"),
     path("<int:pk>/save-settings/", views.save_training_settings, name="training_save_settings"),
+    # Exports
+    path("<int:pk>/export-financials/", views.training_export_financials, name="training_export_financials"),
+    path("<int:pk>/export-participants/", views.training_export_participants, name="training_export_participants"),
+    path("<int:pk>/export-devices/", views.training_export_devices, name="training_export_devices"),
+    path("<int:pk>/export-bank/", views.training_export_bank, name="training_export_bank"),
+    path("<int:pk>/exports/", views.training_exports_page, name="training_exports_page"),
+    path("<int:pk>/export-bank-excel/", views.training_export_bank_excel, name="training_export_bank_excel"),
+    path("<int:pk>/export-financials-excel/", views.training_export_financials_excel, name="training_export_financials_excel"),
+    path("<int:pk>/send-edit-links/", views.send_edit_links, name="training_send_edit_links"),
+    path("<int:pk>/dm/send-all/", views.dm_send_all, name="training_dm_send_all"),
+    path("<int:pk>/dm/<int:participant_id>/send-login/", views.dm_send_login, name="training_dm_send_login"),
+    path("<int:pk>/dm/<int:participant_id>/create-login/", views.dm_create_login, name="training_dm_create_login"),
+    path("<int:pk>/dm/<int:user_id>/toggle/", views.dm_toggle, name="training_dm_toggle"),
 ]

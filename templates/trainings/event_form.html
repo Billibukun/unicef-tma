@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{% if event %}Edit{% else %}Create{% endif %} Event — UNICEF TMA{% endblock %}
+{% block content %}
+<a href="{% if event %}{% url 'event_manage' event.pk %}{% else %}{% url 'event_list' %}{% endif %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
+</a>
+
+<div class="max-w-2xl mx-auto">
+    <form method="post" class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {% csrf_token %}
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-lg font-bold text-[#1A1A1A]">{% if event %}Edit Event{% else %}New Event{% endif %}</h2>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Title <span class="text-red-400">*</span></label>
+                <input type="text" name="title" value="{{ event.title|default:'' }}" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-[#1CABE2] outline-none bg-[#F0F0F0] focus:bg-white transition-colors" placeholder="e.g. Birth Registration Training — Katsina">
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Type</label>
+                    <select name="event_type" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-[#F0F0F0]">
+                        <option value="training" {% if event.event_type == "training" %}selected{% endif %}>Training</option>
+                        <option value="monitoring" {% if event.event_type == "monitoring" %}selected{% endif %}>Monitoring</option>
+                        <option value="workshop" {% if event.event_type == "workshop" %}selected{% endif %}>Workshop</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Start <span class="text-red-400">*</span></label>
+                    <input type="date" name="start_date" value="{{ event.start_date|date:'Y-m-d'|default:'' }}" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-[#F0F0F0]">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">End <span class="text-red-400">*</span></label>
+                    <input type="date" name="end_date" value="{{ event.end_date|date:'Y-m-d'|default:'' }}" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-[#F0F0F0]">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Description</label>
+                <textarea name="description" rows="2" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-[#F0F0F0] focus:bg-white transition-colors outline-none" placeholder="Optional description...">{{ event.description|default:'' }}</textarea>
+            </div>
+
+            {% if not event %}
+            <!-- States — compact grid -->
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-2">States <span class="text-red-400">*</span></label>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-0.5">
+                    {% for s in states %}
+                    <label class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-[#F0F0F0] cursor-pointer text-xs">
+                        <input type="checkbox" name="states" value="{{ s.pk }}" class="w-3.5 h-3.5 rounded border-gray-300 text-[#1CABE2]">
+                        {{ s.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Channels — compact, one line each -->
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-2">Channels</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {% for ch in channels %}
+                    <label class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-[#1CABE2] cursor-pointer transition-colors">
+                        <input type="checkbox" name="channels" value="{{ ch.pk }}" class="w-4 h-4 rounded border-gray-300 text-[#1CABE2]">
+                        <span class="text-sm text-[#1A1A1A]">{{ ch.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-[#F0F0F0]/30">
+            <a href="{% if event %}{% url 'event_manage' event.pk %}{% else %}{% url 'event_list' %}{% endif %}" class="px-4 py-2.5 text-sm text-gray-500">Cancel</a>
+            <button type="submit" class="px-5 py-2.5 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-sm font-medium rounded-xl transition-colors">{% if event %}Save{% else %}Create Event{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} — UNICEF TMA{% endblock %}
+{% block content %}
+<a href="{% url 'event_list' %}" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#1CABE2] mb-5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back to Events
+</a>
+
+<!-- Header -->
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-[#1A1A1A]">{{ event.title }}</h2>
+                <span class="px-2 py-0.5 text-[10px] font-medium rounded-full {% if event.event_type == 'training' %}bg-blue-50 text-[#1CABE2]{% elif event.event_type == 'monitoring' %}bg-purple-50 text-purple-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ event.get_event_type_display }}</span>
+            </div>
+            {% if event.description %}<p class="text-sm text-gray-500 mt-1">{{ event.description }}</p>{% endif %}
+        </div>
+        <div class="flex gap-1.5">
+            <a href="{% url 'event_manage' event.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1CABE2] text-white hover:bg-[#158fb8]">Manage</a>
+            <a href="{% url 'event_edit' event.pk %}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Edit</a>
+        </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
+        <div class="bg-[#F0F0F0] rounded-lg px-3 py-2"><div class="text-[10px] text-gray-400 uppercase">Status</div><div class="mt-0.5"><span class="text-xs font-medium {% if event.status == 'ongoing' %}text-amber-600{% elif event.status == 'completed' %}text-green-700{% elif event.status == 'planned' %}text-[#1CABE2]{% else %}text-red-600{% endif %}">{{ event.get_status_display }}</span></div></div>
+        <div class="bg-[#F0F0F0] rounded-lg px-3 py-2"><div class="text-[10px] text-gray-400 uppercase">Dates</div><div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ event.start_date|date:"d M" }} – {{ event.end_date|date:"d M Y" }}</div></div>
+        <div class="bg-[#F0F0F0] rounded-lg px-3 py-2"><div class="text-[10px] text-gray-400 uppercase">States</div><div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ event.states.count }}</div></div>
+        <div class="bg-[#F0F0F0] rounded-lg px-3 py-2"><div class="text-[10px] text-gray-400 uppercase">Participants</div><div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ total_participants }}</div></div>
+        <div class="bg-[#F0F0F0] rounded-lg px-3 py-2"><div class="text-[10px] text-gray-400 uppercase">Partner</div><div class="text-xs font-medium text-[#1A1A1A] mt-0.5">{{ event.implementing_partner|default:"—" }}</div></div>
+    </div>
+</div>
+
+<!-- Channels & Payment Responsibility -->
+{% if channels %}
+<div class="bg-white rounded-xl border border-gray-200 mb-5 overflow-hidden">
+    <div class="px-4 py-2.5 border-b border-gray-100">
+        <span class="text-sm font-semibold text-[#1A1A1A]">Channels & Payment</span>
+    </div>
+    <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-200 bg-[#F0F0F0]">
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Channel</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Payment Section</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Responsible Person</th>
+        </tr></thead>
+        <tbody>
+        {% for ec in channels %}
+        <tr class="border-b border-gray-50">
+            <td class="px-4 py-2 text-xs font-medium text-[#1A1A1A]">{{ ec.channel.name }}</td>
+            <td class="px-4 py-2 text-xs text-gray-600">{{ ec.payment_section|default:"—" }}</td>
+            <td class="px-4 py-2 text-xs text-gray-600">{% if ec.responsible_person %}{{ ec.responsible_person.get_full_name }}{% else %}{{ ec.responsible_name|default:"—" }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- State Trainings -->
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-4 py-2.5 border-b border-gray-100">
+        <span class="text-sm font-semibold text-[#1A1A1A]">State Editions ({{ training_stats|length }})</span>
+    </div>
+    {% if training_stats %}
+    <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-200 bg-[#F0F0F0]">
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">State</th>
+            <th class="text-left px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Channel</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Participants</th>
+            <th class="text-right px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Cost (NGN)</th>
+            <th class="text-center px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase">Status</th>
+            <th class="px-4 py-2"></th>
+        </tr></thead>
+        <tbody>
+        {% for ts in training_stats %}
+        <tr class="border-b border-gray-50 hover:bg-gray-50">
+            <td class="px-4 py-2 text-xs font-medium text-[#1A1A1A]">{{ ts.training.state }}</td>
+            <td class="px-4 py-2 text-xs text-gray-600">{{ ts.training.channel }}</td>
+            <td class="text-center px-4 py-2 text-xs {% if ts.participants == 0 %}text-red-400{% else %}text-[#1A1A1A]{% endif %}">{{ ts.participants }}</td>
+            <td class="text-right px-4 py-2 text-xs font-mono text-gray-600">{{ ts.cost|floatformat:0 }}</td>
+            <td class="text-center px-4 py-2"><span class="text-[10px] px-1.5 py-0.5 rounded-full {% if ts.training.status == 'ongoing' %}bg-amber-50 text-amber-600{% elif ts.training.status == 'completed' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-[#1CABE2]{% endif %}">{{ ts.training.get_status_display }}</span></td>
+            <td class="px-4 py-2"><a href="{% url 'training_detail' ts.training.pk %}" class="text-xs text-[#1CABE2] hover:underline">Open</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr class="border-t-2 border-gray-200 bg-[#F0F0F0]">
+            <td class="px-4 py-2 text-xs font-bold" colspan="2">Total</td>
+            <td class="text-center px-4 py-2 text-xs font-bold text-[#1CABE2]">{{ total_participants }}</td>
+            <td class="text-right px-4 py-2 text-xs font-mono font-bold text-[#1CABE2]">{{ total_cost|floatformat:0 }}</td>
+            <td colspan="2"></td>
+        </tr>
+        </tfoot>
+    </table>
+    {% else %}
+    <div class="py-8 text-center text-sm text-gray-400">No state editions yet.</div>
+    {% endif %}
+</div>
+{% endblock %}
