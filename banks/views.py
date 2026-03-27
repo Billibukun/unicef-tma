@@ -39,15 +39,30 @@ def bank_account_list(request):
 
 @login_required
 def bank_account_create(request):
+    from participants.models import Participant
+
+    participant_id = request.GET.get("participant") or request.POST.get("participant")
+    participant = None
+    if participant_id:
+        participant = Participant.objects.filter(pk=participant_id).first()
+
     if request.method == "POST":
         form = BankAccountForm(request.POST)
         if form.is_valid():
-            ba = form.save()
-            messages.success(request, f"Bank account added for {ba.participant}.")
+            ba = form.save(commit=False)
+            ba.validated_by = request.user
+            ba.save()
+            # Auto-validate via Flutterwave
+            result = validate_and_save(ba)
+            if result["valid"]:
+                messages.success(request, f"Bank account added and validated for {ba.participant}.")
+            else:
+                messages.warning(request, f"Bank account added for {ba.participant} but validation failed: {result.get('error', 'Unknown error')}. You can retry later.")
+            if participant:
+                return redirect("bank_account_list")
             return redirect("bank_account_list")
     else:
         initial = {}
-        participant_id = request.GET.get("participant")
         if participant_id:
             initial["participant"] = participant_id
         form = BankAccountForm(initial=initial)
@@ -55,6 +70,7 @@ def bank_account_create(request):
     return render(request, "banks/bank_account_form.html", {
         "form": form,
         "title": "Add Bank Account",
+        "participant": participant,
     })
 
 

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile — UNICEF TMA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-lg mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#1CABE2]/10 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1CABE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <h1 class="text-xl font-bold text-gray-900">Update Your Profile</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ participant.full_name }}</p>
+        </div>
+
+        {% if success %}
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-5">
+            <div class="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>
+                    <p class="text-sm font-semibold text-green-700">Profile updated successfully!</p>
+                    {% if participant.email %}<p class="text-xs text-green-600 mt-0.5">A confirmation email has been sent to {{ participant.email }}.</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not participant.lga %}
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+            <div class="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <div>
+                    <p class="text-sm font-semibold text-amber-700">LGA is missing!</p>
+                    <p class="text-xs text-amber-600 mt-0.5">Please select your LGA below so you can be assigned to the correct cluster.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="post" class="bg-white rounded-xl border border-gray-200 overflow-hidden" x-data="editForm()">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border-b border-red-200 px-4 py-3">
+                {% for error in form.non_field_errors %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">First Name <span class="text-red-400">*</span></label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Last Name <span class="text-red-400">*</span></label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Phone <span class="text-red-400">*</span></label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<p class="text-xs text-red-600 mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<p class="text-xs text-red-600 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">State</label>
+                        <select name="state" @change="loadLgas($event.target.value)" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:border-[#1CABE2] outline-none">
+                            <option value="">Select State</option>
+                            {% for s in all_states %}<option value="{{ s.pk }}" {% if participant.state_id == s.pk %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">LGA <span class="text-red-400">*</span></label>
+                        <select name="lga" id="lga-select" required class="w-full px-3 py-2 rounded-lg border text-sm bg-white focus:border-[#1CABE2] outline-none" :class="!document.getElementById('lga-select')?.value ? 'border-red-300' : 'border-gray-300'">
+                            <option value="">Select LGA</option>
+                            {% for l in state_lgas %}<option value="{{ l.pk }}" {% if participant.lga_id == l.pk %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+                        </select>
+                        {% if form.lga.errors %}<p class="text-xs text-red-600 mt-1">{{ form.lga.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Ward</label>
+                    {{ form.ward }}
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Role</label>
+                        {{ form.channel_role }}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Organization</label>
+                        {{ form.health_organization }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Traveling From</label>
+                    {{ form.origin }}
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-gray-100 bg-gray-50">
+                <button type="submit" class="w-full px-4 py-2.5 bg-[#1CABE2] hover:bg-[#158fb8] text-white text-sm font-medium rounded-lg transition-colors">Update Profile</button>
+            </div>
+        </form>
+
+        <p class="text-center text-[10px] text-gray-400 mt-6">UNICEF Training Management Application</p>
+    </div>
+
+    <script>
+    function editForm() {
+        return {
+            async loadLgas(stateId) {
+                const lgaSelect = document.getElementById('lga-select');
+                lgaSelect.innerHTML = '<option value="">Loading...</option>';
+                if (!stateId) {
+                    lgaSelect.innerHTML = '<option value="">Select LGA</option>';
+                    return;
+                }
+                try {
+                    const resp = await fetch(`/common/lgas/?state=${stateId}`);
+                    const data = await resp.json();
+                    let html = '<option value="">Select LGA</option>';
+                    data.forEach(l => { html += `<option value="${l.id}">${l.name}</option>`; });
+                    lgaSelect.innerHTML = html;
+                } catch(e) {
+                    lgaSelect.innerHTML = '<option value="">Error loading</option>';
+                }
+            }
+        }
+    }
+    </script>
+</body>
+</html>

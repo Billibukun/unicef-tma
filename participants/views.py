@@ -161,6 +161,13 @@ def participant_export(request):
     return export_participants_csv(qs)
 
 
+def short_register(request, code):
+    """Short URL redirect → full registration page."""
+    from trainings.models import TrainingCategory
+    category = get_object_or_404(TrainingCategory, short_code=code.upper())
+    return redirect("participant_self_register", slug=category.slug)
+
+
 def participant_self_register(request, slug):
     """Public self-registration via training category link (no login required)."""
     from django.http import HttpResponse
@@ -243,6 +250,18 @@ def participant_self_register(request, slug):
                 participant.nin = nin
                 participant.save(update_fields=["nin"])
 
+            # Save proxy status on bank account
+            is_proxy = "is_proxy" in request.POST
+            proxy_name = request.POST.get("proxy_name", "").strip()
+            try:
+                ba = participant.bank_account
+                if ba:
+                    ba.is_proxy = is_proxy
+                    ba.proxy_name = proxy_name
+                    ba.save(update_fields=["is_proxy", "proxy_name"])
+            except Exception:
+                pass
+
             # Link to this training + category
             assignment_defaults = {"training_category": category}
 
@@ -262,12 +281,36 @@ def participant_self_register(request, slug):
                 assignment_defaults["outbound_mileage"] = temp.outbound_mileage
                 assignment_defaults["return_mileage"] = temp.return_mileage
 
+            # Auto-assign cluster based on LGA
+            if participant.lga:
+                from trainings.models import TrainingCluster
+                matching_cluster = TrainingCluster.objects.filter(
+                    training=training, lgas=participant.lga
+                ).first()
+                if matching_cluster:
+                    assignment_defaults["cluster"] = matching_cluster
+
             assignment, created = TrainingAssignment.objects.get_or_create(
                 training=training,
                 participant=participant,
                 defaults=assignment_defaults,
             )
             if not created:
+                # Update cluster if missing (e.g. registered before clusters were set up)
+                updated_fields = []
+                if not assignment.cluster and participant.lga:
+                    from trainings.models import TrainingCluster
+                    cluster = TrainingCluster.objects.filter(
+                        training=training, lgas=participant.lga
+                    ).first()
+                    if cluster:
+                        assignment.cluster = cluster
+                        updated_fields.append("cluster")
+                if not assignment.training_category:
+                    assignment.training_category = category
+                    updated_fields.append("training_category")
+                if updated_fields:
+                    assignment.save(update_fields=updated_fields)
                 return render(request, "participants/participant_self_register.html", {
                     "form": form,
                     "training": training,
@@ -295,8 +338,34 @@ def participant_self_register(request, slug):
                 )
                 participant.user = user
                 participant.save(update_fields=["user"])
-                training.managers.add(user)
+                # Device managers are NOT training managers — they have separate access
                 login_credentials = {"username": username, "password": temp_password}
+
+                # Send login credentials via email
+                if participant.email:
+                    try:
+                        from django.core.mail import send_mail
+                        from django.conf import settings as app_settings
+                        base_url = getattr(app_settings, "BASE_URL", "https://tma.worksiapps.com")
+                        send_mail(
+                            f"UNICEF TMA — Your Login Credentials",
+                            f"Dear {participant.full_name},\n\n"
+                            f"You have been registered as {category.name} for:\n"
+                            f"{training.title} — {training.state}\n\n"
+                            f"Your login credentials:\n"
+                            f"  URL: {base_url}\n"
+                            f"  Username: {username}\n"
+                            f"  Password: {temp_password}\n\n"
+                            f"Please log in and keep your credentials safe.\n\n"
+                            f"—\n"
+                            f"UNICEF Training Management Application\n"
+                            f"Developed by Ibukunoluwa Omonijo",
+                            None,
+                            [participant.email],
+                            fail_silently=True,
+                        )
+                    except Exception:
+                        pass
 
             # Validate bank account immediately
             bank_result = None
@@ -352,15 +421,90 @@ def participant_search(request):
     return render(request, "participants/partials/search_results.html", {"results": results, "q": q})
 
 
+def participant_self_edit(request, pk: int, token: str):
+    """Public page for a participant to update their own profile (no login required).
+    Token is a HMAC hash of participant pk to prevent unauthorized edits."""
+    import hashlib
+    import hmac
+    from django.conf import settings as django_settings
+
+    participant = get_object_or_404(Participant, pk=pk)
+
+    # Verify token
+    secret = getattr(django_settings, "SECRET_KEY", "fallback")
+    expected = hmac.new(secret.encode(), str(pk).encode(), hashlib.sha256).hexdigest()[:16]
+    if not hmac.compare_digest(token, expected):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Invalid link.")
+
+    from common.models import LGA, State
+    from .forms import ProfileEditForm
+
+    if request.method == "POST":
+        old_lga = participant.lga
+        form = ProfileEditForm(request.POST, instance=participant)
+        if form.is_valid():
+            participant = form.save()
+            changed_fields = form.changed_data
+
+            # Send confirmation email
+            if participant.email:
+                from django.core.mail import send_mail
+                changes_text = ", ".join(changed_fields)
+                try:
+                    send_mail(
+                        "UNICEF TMA - Profile Updated",
+                        f"Dear {participant.full_name},\n\n"
+                        f"Your profile has been updated successfully.\n"
+                        f"Updated fields: {changes_text}\n\n"
+                        f"Current details:\n"
+                        f"  Name: {participant.full_name}\n"
+                        f"  Phone: {participant.phone}\n"
+                        f"  Email: {participant.email}\n"
+                        f"  State: {participant.state or '-'}\n"
+                        f"  LGA: {participant.lga or '-'}\n"
+                        f"  Ward: {participant.ward or '-'}\n\n"
+                        f"If you did not make this change, please contact your training coordinator.\n\n"
+                        f"---\nUNICEF Training Management Application",
+                        None,
+                        [participant.email],
+                        fail_silently=True,
+                    )
+                except Exception:
+                    pass
+
+            return render(request, "participants/participant_self_edit.html", {
+                "participant": participant,
+                "form": ProfileEditForm(instance=participant),
+                "success": True,
+                "changed_fields": changed_fields,
+                "state_lgas": participant.state.lgas.all() if participant.state else LGA.objects.none(),
+                "all_states": State.objects.all(),
+            })
+    else:
+        form = ProfileEditForm(instance=participant)
+
+    return render(request, "participants/participant_self_edit.html", {
+        "participant": participant,
+        "form": form,
+        "state_lgas": participant.state.lgas.all() if participant.state else LGA.objects.none(),
+        "all_states": State.objects.all(),
+    })
+
+
 def validate_bank_ajax(request):
-    """HTMX: validate bank account number and return account name."""
+    """Validate bank account number — returns HTML for HTMX or JSON for fetch."""
+    from django.http import JsonResponse
+
     bank_id = request.GET.get("bank")
     account_number = request.GET.get("account_number", "").strip()
+    wants_json = request.headers.get("Accept", "").startswith("application/json") or request.GET.get("format") == "json"
 
     if not bank_id or len(account_number) != 10:
-        return render(request, "participants/partials/bank_validation_result.html", {
-            "error": "Select a bank and enter a 10-digit account number" if bank_id or account_number else "",
-        })
+        error = "Select a bank and enter a 10-digit account number" if bank_id or account_number else ""
+        if wants_json:
+            return JsonResponse({"valid": False, "error": error})
+        return render(request, "participants/partials/bank_validation_result.html", {"error": error})
 
     from banks.models import Bank
     from banks.services import validate_bank_account
@@ -368,9 +512,15 @@ def validate_bank_ajax(request):
     try:
         bank = Bank.objects.get(pk=bank_id)
     except Bank.DoesNotExist:
+        if wants_json:
+            return JsonResponse({"valid": False, "error": "Invalid bank"})
         return render(request, "participants/partials/bank_validation_result.html", {"error": "Invalid bank"})
 
     result = validate_bank_account(account_number, bank)
-    return render(request, "participants/partials/bank_validation_result.html", {
-        "result": result,
-    })
+    if wants_json:
+        return JsonResponse({
+            "valid": result.get("valid", False),
+            "account_name": result.get("account_name", ""),
+            "error": result.get("error", ""),
+        })
+    return render(request, "participants/partials/bank_validation_result.html", {"result": result})

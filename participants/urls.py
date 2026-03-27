@@ -10,6 +10,7 @@ urlpatterns = [
     path("register/<uuid:slug>/", views.participant_self_register, name="participant_self_register"),
     path("<int:pk>/", views.participant_detail, name="participant_detail"),
     path("<int:pk>/edit/", views.participant_edit, name="participant_edit"),
+    path("<int:pk>/update/<str:token>/", views.participant_self_edit, name="participant_self_edit"),
     path("search/", views.participant_search, name="participant_search"),
     path("validate-bank/", views.validate_bank_ajax, name="validate_bank_ajax"),
 ]

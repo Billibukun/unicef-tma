@@ -76,8 +76,24 @@
             </tbody>
         </table>
     </div>
-    <div class="px-4 py-3 text-sm text-gray-400 border-t border-gray-100">
-        {{ participants|length }} participant{{ participants|length|pluralize }}
+    <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-xs">
+        <span class="text-gray-400">
+            {% if participants.paginator %}{{ participants.paginator.count }} total — page {{ participants.number }}/{{ participants.paginator.num_pages }}{% else %}{{ participants|length }} participant{{ participants|length|pluralize }}{% endif %}
+        </span>
+        {% if participants.has_other_pages %}
+        <div class="flex items-center gap-2">
+            <select onchange="window.location.href='?per_page='+this.value" class="px-2 py-1 text-[10px] rounded border border-gray-300 bg-white">
+                <option value="15" {% if participants.paginator.per_page == 15 %}selected{% endif %}>15</option>
+                <option value="50" {% if participants.paginator.per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if participants.paginator.per_page == 100 %}selected{% endif %}>100</option>
+                <option value="500" {% if participants.paginator.per_page == 500 %}selected{% endif %}>All</option>
+            </select>
+            <div class="flex gap-1">
+                {% if participants.has_previous %}<a href="?page={{ participants.previous_page_number }}&per_page={{ participants.paginator.per_page }}{% if current_channel %}&channel={{ current_channel }}{% endif %}{% if current_search %}&q={{ current_search }}{% endif %}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Prev</a>{% endif %}
+                {% if participants.has_next %}<a href="?page={{ participants.next_page_number }}&per_page={{ participants.paginator.per_page }}{% if current_channel %}&channel={{ current_channel }}{% endif %}{% if current_search %}&q={{ current_search }}{% endif %}" class="px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">Next</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

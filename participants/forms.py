@@ -84,7 +84,8 @@ class SelfRegistrationForm(forms.ModelForm):
         self.fields["state"].queryset = State.objects.all()
         self.fields["state"].required = False
         self.fields["lga"].queryset = LGA.objects.all()
-        self.fields["lga"].required = False
+        self.fields["lga"].required = True
+        self.fields["lga"].error_messages = {"required": "Please select your LGA."}
 
     def clean(self):
         cleaned = super().clean()
@@ -108,6 +109,41 @@ class SelfRegistrationForm(forms.ModelForm):
                 defaults={"bank": bank, "account_number": account_number},
             )
         return participant
+
+
+class ProfileEditForm(forms.ModelForm):
+    """Lightweight form for participants to update their own profile."""
+    class Meta:
+        model = Participant
+        fields = [
+            "first_name", "last_name", "email", "phone",
+            "state", "lga", "ward", "channel_role",
+            "health_organization", "origin",
+        ]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": INPUT}),
+            "last_name": forms.TextInput(attrs={"class": INPUT}),
+            "email": forms.EmailInput(attrs={"class": INPUT}),
+            "phone": forms.TextInput(attrs={"class": INPUT}),
+            "state": forms.Select(attrs={"class": SELECT}),
+            "lga": forms.Select(attrs={"class": SELECT}),
+            "ward": forms.TextInput(attrs={"class": INPUT}),
+            "channel_role": forms.TextInput(attrs={"class": INPUT}),
+            "health_organization": forms.TextInput(attrs={"class": INPUT}),
+            "origin": forms.TextInput(attrs={"class": INPUT, "placeholder": "Traveling from"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from common.models import LGA, State
+        self.fields["state"].queryset = State.objects.all()
+        self.fields["lga"].queryset = LGA.objects.all()
+        self.fields["lga"].required = True
+        self.fields["lga"].error_messages = {"required": "Please select your LGA."}
+        self.fields["health_organization"].required = False
+        self.fields["ward"].required = False
+        self.fields["origin"].required = False
+        self.fields["channel_role"].required = False
 
 
 class ParticipantImportForm(forms.Form):
